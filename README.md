@@ -1,84 +1,555 @@
 # php-vibe-coding-frame
-单层 MVC 框架, 供快速开发使用
 
-## 目录结构及文件说明
+单层 MVC PHP 框架，专为 PHP-FPM 快速开发设计。无 DI 容器、无注解、无 YAML 路由配置、无 Composer autoload——路由即闭包，控制器即函数，写完即跑。
+
+## 设计理念
+
+| 原则 | 说明 |
+|------|------|
+| **显式优于隐式** | 依赖靠 `include`，配置靠 PHP 数组，路由靠闭包。没有"魔法"，所有行为可见。 |
+| **约定优于配置** | Entity 类名即表名、DAO 命名即 `{entity}_dao`、返回数组即 JSON。默认行为覆盖 90% 场景。 |
+| **简单优于灵活** | 单一 MVC 层，无中间件栈、无服务容器、无 Provider。够用就好，不设可扩展点。 |
+| **纯函数 + 静态方法** | 无类实例化的 DI，无反射，无注解扫描。所有能力通过函数和静态方法暴露。 |
+
+## 架构概览
+
+```
+nginx → public/index.php → bootstrap.php（加载 frame/ 核心库）
+  → 注册错误/异常处理
+  → if_verify（unit_of_work 自动包裹）
+  → 加载 controller/ 路由文件
+  → 路由匹配 → 执行闭包 → 响应
+
+cli  → public/cli.php → bootstrap.php → 加载 command/ → 命令匹配
+```
+
+核心行为：
+- **路由闭包返回数组 → JSON 响应**，返回字符串 → HTML 响应
+- **所有控制器闭包默认包裹在 `unit_of_work()` 中**，实体变更自动提交，无需手动 `save()`
+- **`$_SERVER['ENV']`** 控制环境（development/production），配置自动按环境合并覆盖
+
+## 10 秒看到 Hello World
+
+```bash
+git clone <repo-url> my-project && cd my-project
+sh project/tool/start_development_server.sh   # 需要 Docker + 输入 sudo 密码
+```
+
+打开浏览器访问 `http://localhost`，看到 "hello world" 页面。
+
+> 映射了 80 和 3306 端口，若端口冲突可修改 `project/tool/start_development_server.sh`。
+
+---
+
+## 快速上手
+
+### 1. 新建一个路由
+
+在 `controller/` 下创建文件，例如 `controller/user.php`：
+
+```php
+<?php
+
+if_get('/user/*', function ($user_id) {
+    return dao('user')->find($user_id); // 返回实体 → JSON
+});
+
+if_post('/user', function () {
+    $name = input('name');
+    return user::create($name); // Entity 实现了 JsonSerializable → JSON
+});
+
+if_get('/user/list', function () {
+    $users = dao('user')->find_all();
+    return render('user/list', ['users' => $users]);  // render() 返回 HTML 字符串
+});
+```
+
+然后在 `public/index.php` 中加入一行 `include`：
+
+```php
+include CONTROLLER_DIR.'/base.php';
+include CONTROLLER_DIR.'/user.php';  // 新增
+```
+
+### 2. 新建一个 Entity + DAO
+
+**Entity**（`domain/entity/user.php`）：
+
+```php
+<?php
+
+class user extends entity
+{
+    public $structs = [
+        'name'   => '',
+    ];
+
+    public static function create(string $name): user
+    {
+        $user = parent::init();
+        $user->name = $name;
+        return $user;
+    }
+}
+```
+
+**DAO**（`domain/dao/user.php`）：
+
+```php
+<?php
+
+class user_dao extends dao
+{
+    protected $table_name = 'user';
+    protected $db_config_key = 'default';
+}
+```
+
+**注册类映射**——运行一条命令即可：
+
+```bash
+sh project/tool/classmap.sh domain
+```
+
+### 3. 创建数据库表
+
+```bash
+php public/cli.php migrate:make --name=create_user_table
+```
+
+自动生成的 SQL 文件在 `command/migration/sql/tmp/`，填充内容：
+
+```sql
+# up
+create table `user` (
+    `id` bigint(20) not null,
+    `version` int(11) not null default 0,
+    `create_time` datetime not null,
+    `update_time` datetime not null,
+    `delete_time` datetime default null,
+    `name` varchar(255) not null default '',
+    primary key (`id`)
+) engine=InnoDB default charset=utf8mb4;
+
+# down
+drop table `user`;
+```
+
+执行迁移：
+
+```bash
+php public/cli.php migrate
+```
+
+### 4. 渲染页面
+
+创建模板 `view/user/list.php`：
+
+```html
+@include('layout/header')
+
+<h1>用户列表</h1>
+
+@foreach ($users as $user)
+    <div>
+        <span>{{ $user->name }}</span>
+    </div>
+@endforeach
+
+@include('layout/footer')
+```
+
+---
+
+## 核心概念
+
+### 路由
+
+路由函数定义在 `frame/php_fpm.php`，闭包直接写在 `controller/` 文件中：
+
+```php
+if_get($rule, $action)      // GET
+if_post($rule, $action)     // POST
+if_put($rule, $action)      // PUT
+if_delete($rule, $action)   // DELETE
+if_any($rule, $action)      // 任意方法
+```
+
+`*` 作为通配符捕获路径段，按位置传递给闭包参数：
+
+```php
+if_get('/post/*/comment/*', function ($post_id, $comment_id) {
+    // GET /post/123/comment/456 → $post_id=123, $comment_id=456
+});
+```
+
+**返回值约定**：
+- 数组 → JSON（自动 `Content-Type: application/json`）
+- 字符串 → HTML（自动 `Content-Type: text/html`）
+
+**获取输入**：
+
+```php
+$name   = input('name');              // GET/POST 参数
+$json   = input_json('path.to.key');  // JSON body
+$raw    = input_post_raw();           // 原始 POST body
+$file   = input_file('avatar');       // 上传文件
+$cookie = cookie('token');            // Cookie
+```
+
+### Entity（ActiveRecord）
+
+每个数据库表对应一个 entity 类，继承 `entity` 基类。**五个系统字段**由基类自动管理，无需在 `structs` 中声明：
+
+| 字段 | 说明 |
+|------|------|
+| `id` | 主键，通过 Redis INCR 生成 |
+| `version` | 乐观锁版本号，每次更新 +1 |
+| `create_time` | 创建时间 |
+| `update_time` | 更新时间 |
+| `delete_time` | 软删除时间（null = 未删除） |
+
+```php
+class order extends entity
+{
+    public $structs = [
+        'user_id' => 0,
+        'amount'  => 0,
+        'status'  => 'pending',
+    ];
+
+    public static function create(int $user_id, float $amount): order
+    {
+        $order = parent::init();
+        $order->user_id = $user_id;
+        $order->amount = $amount;
+        return $order;
+    }
+}
+```
+
+**状态判断**：
+
+```php
+$entity->just_new()        // 尚未持久化
+$entity->just_updated()    // 内存值已变更
+$entity->is_deleted()      // 已软删除
+$entity->is_null()         // 是 null_entity（查询无结果）
+```
+
+**关系定义**（在 `__construct()` 中声明，懒加载）：
+
+```php
+$this->has_one('profile', 'user_profile', 'user_id');      // 当前实体拥有一个子实体
+$this->belongs_to('creator', 'user', 'creator_id');        // 当前实体属于一个父实体
+$this->has_many('orders', 'order', 'user_id');             // 一对多
+
+// 访问
+$user->profile;               // 首次访问时查询
+$user->orders_with_deleted;   // 含软删除的关联实体
+
+// 批量加载，防止 N+1
+relationship_batch_load($users, 'profile.orders');
+```
+
+**软删除与硬删除**：
+
+```php
+$entity->delete();        // 软删除（设 delete_time）
+$entity->restore();       // 恢复
+$entity->force_delete();  // 硬删除（执行 DELETE FROM）
+```
+
+### DAO
+
+每个 Entity 对应一个 DAO：
+
+```php
+class order_dao extends dao
+{
+    protected $table_name = 'order';
+    protected $db_config_key = 'default';
+}
+```
+
+通过 `dao()` 函数获取实例（无需实例化）：
+
+```php
+// 单条查询（不存在返回 null_entity）
+$order = dao('order')->find($id);
+
+// 按列查询
+$order = dao('order')->find_by_column(['status' => 'pending']);
+
+// 全量查询，返回数组 key 为实体 id
+$orders = dao('order')->find_all();
+$orders = dao('order')->find_all_order_by_id_desc();
+
+// 外键查询
+$orders = dao('order')->find_all_by_foreign_key('user_id', $user_id);
+
+// 分页
+list($list, $pagination) = dao('order')->find_all_paginated_by_current_page_and_column(
+    $page, $size, ['status' => 'paid']
+);
+
+// 含软删除记录
+$orders = dao('order', true)->find_all();
+```
+
+### Unit of Work（工作单元）
+
+控制器的所有路由闭包**已自动包裹**在 `unit_of_work()` 中，创建 Entity、修改属性后无需手动调用 `save()`——闭包结束时自动持久化。
+
+```php
+if_post('/order', function () {
+    $order = order::create(input('user_id'), input('amount'));
+    // 无需 $order->save()，闭包结束自动 INSERT
+    return $order;
+});
+```
+
+**工作流程**：扫描本地缓存中的实体变更 → 生成 INSERT/UPDATE/DELETE SQL → 乐观锁校验（`WHERE version = :old_version`）→ 事务提交。
+
+**手动使用**（如 CLI 脚本）：
+
+```php
+unit_of_work(function () {
+    $demo = demo::create('test');
+});
+```
+
+**生命周期钩子**（常用于成功后推队列任务）：
+
+```php
+if_unit_of_work_executed(function () {
+    queue_push('send_notification', ['user_id' => $user->id]);
+});
+
+if_unit_of_work_disturbed(function (\Exception $e) {
+    log_exception($e);
+});
+```
+
+### 视图（Blade）
+
+自实现轻量 Blade 引擎，支持以下指令：
+
+```
+{{ $var }}              输出变量
+{{ $var or '默认值' }}   带默认值的输出
+{{{ $var }}}            转义输出（防 XSS）
+
+@if / @elseif / @else / @endif
+@unless / @endunless
+@foreach / @endforeach
+@for / @endfor
+@while / @endwhile
+
+@include('layout/header')   引入子模板（自动继承变量）
+@php / @endphp              原生 PHP 块
+{{-- 注释 --}}
+```
+
+> 不支持 `@extends`、`@section`、`@yield` 等 Laravel 指令。使用 `@include('layout/header')` 代替布局继承。
+
+`render()` 渲染模板并返回 HTML 字符串：
+
+```php
+return render('order/detail', [
+    'order' => $order,
+    'items' => $items,
+]);
+```
+
+模板路径相对于 `view/`，不带 `.php` 扩展名。
+
+### 配置
+
+配置即 PHP 数组，通过 `config('文件名')` 加载。支持按环境覆盖：
+
+```
+config/
+├── mysql.php              # 基础配置
+├── redis.php
+├── development/           # ENV=development 时覆盖
+│   └── mysql.php
+└── production/            # ENV=production 时覆盖（默认）
+    └── mysql.php
+```
+
+**midwares → resources 模式**（基础设施配置的标准写法）：
+
+```php
+return [
+    'midwares' => [
+        'default' => 'local',   // 逻辑名 → 资源名
+    ],
+    'resources' => [
+        'local' => [            // 实际连接参数
+            'host' => '127.0.0.1',
+            'port' => 6379,
+        ],
+    ],
+];
+```
+
+环境覆盖只需改 `resources` 中的连接信息，`midwares` 映射不动。通过 `config_midware('redis')` 获取 `default` 对应的配置。
+
+### 错误处理
+
+```php
+// 业务异常（错误码定义在 config/error_code.php）
+otherwise_error_code('USER_NOT_FOUND', $user->is_not_null());
+
+// 低级断言
+otherwise($assertion, '描述信息');
+```
+
+异常由框架自动处理：AJAX 请求返回 JSON `{code, msg, data}`，普通请求返回纯文本。
+
+### CLI 命令
+
+```bash
+# 迁移
+php public/cli.php migrate              # 执行迁移
+php public/cli.php migrate:make --name=xxx  # 自动生成迁移文件
+php public/cli.php migrate:rollback     # 回滚最近一批
+php public/cli.php migrate:reset        # 回滚全部
+php public/cli.php migrate:dry-run      # 预览 SQL
+php public/cli.php migrate:install      # 初始化迁移追踪表
+
+# 队列
+php public/cli.php queue:worker         # 启动 worker
+php public/cli.php queue:status         # 查看状态
+php public/cli.php queue:pause          # 暂停派发
+php public/cli.php queue:peek-buried    # 交互式处理 buried 任务
+
+# 实体
+php public/cli.php entity:restep-last-id  # 重置 ID 生成器
+```
+
+自定义命令：
+
+```php
+command('demo:hello', '输出问候语', function () {
+    $name = command_paramater('name', 'world');
+    echo "Hello, $name!\n";
+});
+```
+
+### 队列任务
+
+基于 Beanstalkd，纯 socket 协议实现。
+
+**定义任务**（`command/queue/queue_job/`）：
+
+```php
+queue_job('send_sms', function ($data, $job_id) {
+    send_sms($data['phone'], $data['message']);
+    return true;  // true = delete, false = release/bury
+}, 10, [1, 1, 1], 'default');
+//  ↑ 优先级  ↑ 重试延迟(秒)  ↑ tube
+```
+
+**投递任务**：
+
+```php
+queue_push('send_sms', ['phone' => '138...', 'message' => 'hello'], $delay_seconds = 0);
+```
+
+### 拦截器
+
+```php
+// 全局拦截（interceptor/base.php）——如鉴权
+if_verify(function ($action, $args) {
+    $user = get_current_user();
+    if ($user->is_null()) {
+        redirect('/login');
+    }
+    return $action;
+});
+
+// 局部拦截（controller 内显式调用）——推荐
+if_get('/admin/*', function ($id) {
+    verify_admin();
+    return dao('user')->find($id);
+});
+```
+
+---
+
+## 目录结构
+
 ```
 .
-├── bootstrap.php (框架通用加载文件)
-├── command (命令行命令文件目录)
-│   ├── migration (数据库迁移文件目录)
-│   │   ├── migrate.php (migrate 命令)
-│   │   └── sql (迁移 SQL 文件目录)
-│   │       ├── merged (已合并 SQL 文件归档)
-│   │       └── tmp (待合并 SQL 文件)
-│   ├── queue (队列相关目录)
-│   │   ├── queue_job (队列 job 文件目录)
-│   │   └── queue.php (queue 命令)
-│   └── entity.php (entity 命令)
-├── config (配置文件目录)
-│   ├── development (开发环境配置覆盖目录)
-│   ├── production (线上环境配置覆盖目录)
-│   ├── beanstalk.php (队列 beanstalk 配置文件)
-│   ├── blade.php (模板引擎配置文件)
-│   ├── error_code.php (错误码定义)
-│   ├── log.php (日志配置文件)
-│   ├── mysql.php (数据库 mysql 配置文件)
-│   └── redis.php (存储 redis 配置文件)
-├── controller (控制器文件目录)
-│   └── base.php (helloworld 控制器)
-├── domain (领域层目录)
-│   ├── dao (DAO 层文件目录)
-│   ├── entity (实体层文件目录)
-│   ├── knowledge (知识层文件目录)
-│   ├── autoload.php (领域层自动加载)
-│   └── load.php (领域层加载文件)
-├── frame (框架目录)
-├── interceptor (拦截器目录)
-├── project (项目相关文件目录)
-│   ├── config (配置文件目录)
-│   │   ├── development (开发环境)
-│   │   │   ├── bash (bash 补全脚本)
-│   │   │   ├── nginx (nginx 配置)
-│   │   │   │   └── php-vibe-coding-frame.conf
-│   │   │   └── supervisor (supervisor 配置)
-│   │   │       ├── php-vibe-coding-frame_queue_worker.conf
-│   │   │       └── queue_job_watch.conf
-│   │   └── production (线上环境)
-│   │       ├── nginx
-│   │       │   └── php-vibe-coding-frame.conf
-│   │       └── supervisor
-│   │           └── php-vibe-coding-frame_queue_worker.conf
-│   └── tool (工具脚本目录)
-│       ├── classmap.sh (生成 ORM 类映射文件)
-│       ├── naming_project.sh (基于当前项目创建新项目，批量替换项目名称)
-│       ├── start_development_server.sh (基于 docker 快速启动开发环境)
-│       ├── development (开发环境辅助脚本)
-│       │   └── after_env_start.sh (容器启动后执行的初始化脚本)
-│       └── production (线上环境脚本)
-│           ├── after_push.sh (部署后执行的脚本)
-│           └── check_update.sh (检查更新的脚本)
-├── public (入口文件目录)
-│   ├── assets (静态资源目录)
-│   │   ├── css
-│   │   ├── img
-│   │   └── js
-│   ├── cli.php (命令行入口文件)
-│   └── index.php (web 请求入口文件)
-├── util (工具类文件目录)
-│   ├── autoload.php (工具类自动加载)
-│   └── load.php (工具类加载文件)
-├── view (模板文件目录)
-│   ├── blade (blade 编译缓存目录)
-│   └── index (首页模板)
-│       └── index.php
-├── CLAUDE.md
-├── LICENSE
-└── README.md
+├── bootstrap.php            # 框架通用加载
+├── public/                  # Web 根目录（nginx root）
+│   ├── index.php            # HTTP 入口
+│   ├── cli.php              # CLI 入口
+│   └── assets/              # 静态资源（nginx 直接返回）
+├── frame/                   # 框架核心库（ORM、DB、Cache、Queue、Blade、日志）
+├── controller/              # HTTP 路由定义（闭包，按模块拆分）
+├── domain/                  # 领域层
+│   ├── entity/              # ActiveRecord 实体
+│   ├── dao/                 # 数据访问对象
+│   ├── knowledge/           # 业务知识（复杂逻辑封装）
+│   ├── autoload.php         # 类自动加载映射
+│   └── load.php             # 领域层入口
+├── config/                  # PHP 配置数组 + ENV 环境覆盖
+├── command/                 # CLI 命令
+│   ├── migration/           # 数据库迁移
+│   │   ├── migrate.php
+│   │   └── sql/             # 迁移 SQL 文件
+│   └── queue/               # 队列
+│       ├── queue.php
+│       └── queue_job/       # 任务定义
+├── view/                    # Blade 模板
+│   ├── layout/              # 公共布局（header/footer）
+│   └── blade/               # 编译缓存
+├── interceptor/             # 拦截器（全局前置/后置逻辑）
+├── util/                    # 工具类（外部能力封装：支付、短信、OSS）
+└── project/                 # 部署配置（nginx、supervisor、docker）与工具脚本
+    ├── config/
+    │   ├── development/     # 开发环境 nginx/supervisor 配置
+    │   └── production/      # 生产环境配置
+    └── tool/
+        ├── start_development_server.sh  # Docker 一键启动开发环境
+        ├── classmap.sh                  # 生成类映射文件
+        └── naming_project.sh            # 重命名项目
 ```
 
-## 10 秒看到 helloworld
+---
 
-1. 先将代码 clone 或者下载到本地
-2. 确保机器上有 docker 环境
-3. 执行代码中的脚本快速启动环境 `sh project/tool/start_development_server.sh`
-4. 输入当前用户密码。此处是为了开发方便映射了 80 和 3306 端口，若不允许使用 80 可以手动修改第三条提到的脚本更换端口
+## 编码约定
+
+- PHP 纯函数 + 静态方法，无类实例化的 DI
+- 数组使用 `[]` 短语法
+- 类名、函数名使用蛇形小写（snake_case）
+- Entity 类名与表名一致（单数名词）
+- DAO 类名为 `{entity_name}_dao`
+- 工厂方法统一命名为 `create()`，必填参数前置
+- 路由文件中不封装函数——逻辑写在闭包内，复杂逻辑下沉到 `domain/knowledge/`
+- 无注解、无反射、无 Composer autoload——基于 class map 的类加载
+
+---
+
+## 与 Laravel 的关键差异
+
+| | php-vibe-coding-frame | Laravel |
+|------|------|------|
+| 路由 | 闭包直接注册在 `controller/*.php` | `routes/web.php` 指向 Controller 类方法 |
+| 控制器 | 闭包即控制器 | Controller 类 + 方法 |
+| DI | 无，依赖显式 `include` | 服务容器自动注入 |
+| ORM | 自定义 ActiveRecord + UoW | Eloquent |
+| 配置 | PHP 数组 + 环境覆盖 | `.env` + `config/*.php` |
+| 模板 | 自实现 Blade（10 个指令） | 完整 Blade + 组件系统 |
+| 类加载 | class map（`spl_autoload_register`） | Composer PSR-4 |
+| 启动方式 | Docker 一键启动 | `php artisan serve` / Sail |
+| 适用场景 | 中小型项目、快速原型、API 服务 | 大型项目、全功能 Web 应用 |
+| 启动开销 | 仅 include ~10 个核心文件 | 启动数百个类，注册数十个 ServiceProvider |
+| 内存占用 | 低（无容器、无绑定、无注解缓存） | 较高（容器绑定、facade、事件监听器常驻） |
+| 请求延迟 | 毫秒级，无需路由/配置缓存预热 | 生产环境必须靠路由缓存 + 配置缓存 + Octane 优化 |
+| 类加载 | class map 直接 `include`，O(1) 查找 | Composer PSR-4，需扫描目录 / 转储 classmap |
+| 部署形态 | PHP-FPM 原生友好，无需常驻进程 | FPM 下性能一般，生产常需 Octane/Swoole 加持 |
