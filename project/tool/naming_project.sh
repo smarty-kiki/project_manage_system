@@ -1,0 +1,33 @@
+#!/bin/bash
+
+sed_name()
+{
+    cat $1 | sed -e "s/php-vibe-coding-frame/$2/g" > $1.new && mv $1.new $1
+}
+
+if [ ! -n "$1" ] ;then
+    echo "Usage: $0 <name>"
+    exit
+fi
+
+ROOT_DIR="$(cd "$(dirname $0)" && pwd)"/../..
+
+mv $ROOT_DIR/project/config/development/nginx/php-vibe-coding-frame.conf $ROOT_DIR/project/config/development/nginx/$1.conf
+mv $ROOT_DIR/project/config/development/supervisor/php-vibe-coding-frame_queue_worker.conf $ROOT_DIR/project/config/development/supervisor/$1_queue_worker.conf
+mv $ROOT_DIR/project/config/production/nginx/php-vibe-coding-frame.conf $ROOT_DIR/project/config/production/nginx/$1.conf
+mv $ROOT_DIR/project/config/production/supervisor/php-vibe-coding-frame_queue_worker.conf $ROOT_DIR/project/config/production/supervisor/$1_queue_worker.conf
+mv $ROOT_DIR/project/config/production/caddy/php-vibe-coding-frame.Caddyfile $ROOT_DIR/project/config/production/caddy/$1.Caddyfile
+
+sed_name $ROOT_DIR/project/config/development/nginx/$1.conf $1
+sed_name $ROOT_DIR/project/config/development/supervisor/$1_queue_worker.conf $1
+sed_name $ROOT_DIR/project/config/development/supervisor/queue_job_watch.conf $1
+sed_name $ROOT_DIR/project/config/development/bash/cli_complete.bash $1
+sed_name $ROOT_DIR/project/config/production/nginx/$1.conf $1
+sed_name $ROOT_DIR/project/config/production/supervisor/$1_queue_worker.conf $1
+sed_name $ROOT_DIR/project/config/production/caddy/$1.Caddyfile $1
+sed_name $ROOT_DIR/project/tool/start_development_server.sh $1
+sed_name $ROOT_DIR/project/tool/development/after_env_start.sh $1
+sed_name $ROOT_DIR/project/tool/production/after_push.sh $1
+sed_name $ROOT_DIR/project/tool/production/check_update.sh $1
+
+sed_name $ROOT_DIR/README.md $1

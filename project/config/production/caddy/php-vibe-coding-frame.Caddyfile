@@ -1,0 +1,9 @@
+php-vibe-coding-frame.yao-yang.cn {
+    tls 378031327@qq.com
+    root * /var/www/php-vibe-coding-frame/public
+    encode gzip
+    route /CLAUDE.md {
+        respond 403
+    }
+    php_fastcgi unix//var/run/php-fpm.sock
+}
