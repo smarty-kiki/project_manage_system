@@ -35,7 +35,7 @@ command/
 
 **新增迁移文件规范：**
 
-- **正式迁移文件**：放置在 `command/migration/sql/` 目录。文件名格式为 `YYYY_mm_dd_HH_MM_SS_描述.sql`（如 `2026_06_06_10_30_00_add_user_table.sql`）。可通过 `migrate:make --name=描述` 命令自动生成。
+- **正式迁移文件**：放置在 `command/migration/sql/` 目录。文件名格式为 `YYYY_mm_dd_HH_MM_SS_描述.sql`（如 `2026_06_06_10_30_00_add_user_table.sql`）。手动创建时严格按此规则命名，全部下划线分隔，描述使用英文蛇形小写，**时分秒必须填写当前实际时间，禁止使用 `00_00_00` 占位**。
 - **临时/开发环境迁移文件**：放置在 `command/migration/sql/tmp/` 目录。文件名格式同上。执行 migration 时需加 `--with_tmp_files` 或 `--tmp_files` 参数。
 - **SQL 文件格式**：必须包含 `# up` 和 `# down` 两部分，分别编写正向迁移和回滚 SQL，每条语句以 `;` 结尾。示例参见 `command/migration/sql/tmp/2026_02_06_23_38_20_demo.sql`。
 
@@ -47,7 +47,7 @@ command/
 | `migrate:uninstall` | 删除 `migrations` 追踪表 |
 | `migrate` | 执行待迁移文件，支持 `--tmp_files` 和 `--with_tmp_files` 参数 |
 | `migrate:dry-run` | 展示将会执行的 SQL，不真正执行 |
-| `migrate:make --name=xxx` | 自动生成迁移文件：执行全部迁移获取当前库结构，回滚后重新执行以还原，对比差异生成 SQL |
+| `migrate:make --name=xxx` | 对比数据库当前结构与迁移文件定义结构的差异，生成补差迁移 SQL 文件 |
 | `migrate:make-merge` | 将所有已有迁移文件合并为一个合并迁移，原始文件归档到 `merged/` 目录，通过 MD5 签名去重 |
 | `migrate:generate-diff` | 生成临时迁移与正式迁移之间的差异变更 SQL |
 | `migrate:rollback` | 回滚最近一批迁移 |

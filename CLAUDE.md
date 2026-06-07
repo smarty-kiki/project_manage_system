@@ -313,7 +313,14 @@ php public/cli.php entity:restep-last-id    # 重置实体 ID 生成器
 
 ## 迁移系统
 
-迁移 SQL 文件放在 `command/migration/sql/` 目录，文件名格式 `YYYY_mm_dd_HH_MM_SS_描述.sql`。临时迁移放 `sql/tmp/` 子目录。
+迁移 SQL 文件放在 `command/migration/sql/` 目录。临时迁移放 `sql/tmp/` 子目录。
+
+**文件名格式**：`YYYY_mm_dd_HH_MM_SS_描述.sql`，全部使用下划线分隔，描述使用英文蛇形小写。手动创建迁移文件时严格按此规则命名，**时分秒必须写入当前实际时间，禁止使用 `00_00_00` 占位**。
+
+```
+示例：2026_06_08_14_30_00_create_user_table.sql
+      2026_06_08_15_07_22_add_login_log_table.sql
+```
 
 每个文件必须包含 `# up` 和 `# down` 两部分：
 ```sql
