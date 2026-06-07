@@ -45,6 +45,10 @@ if_verify(function ($action, $args) {
 
         $data = call_user_func_array($action, $args);
 
+        if (has_redirect()) {
+            return ;
+        }
+
         if (is_string($data)) {
 
             header('Content-type: text/html');

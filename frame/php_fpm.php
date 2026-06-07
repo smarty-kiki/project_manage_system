@@ -186,7 +186,7 @@ function not_found(?closure $action = null)
 
 // 两段式延迟重定向：闭包内 redirect() 仅记录目标，等 unit_of_work 提交事务后，
 // if_any() 再调 trigger_redirect() 发 header + exit，保证跳转时不丢事务。
-// 不在 if_any 执行链上的代码（拦截器子函数、脚本等）需要手动 trigger_redirect()。
+// 不在 if_any 执行链上的代码需要手动 trigger_redirect() + exit。
 function redirect(?string $uri = null, bool $forever = false): array
 {/*{{{*/
     static $container = [];
@@ -201,6 +201,12 @@ function redirect(?string $uri = null, bool $forever = false): array
     return $container;
 }/*}}}*/
 
+function has_redirect()
+{/*{{{*/
+    return ! empty(redirect());
+}/*}}}*/
+
+// 只发 Location header 不 exit，手动调用后必须加 exit 阻止后续代码继续执行
 function trigger_redirect($uri = null, $forever = false)
 {/*{{{*/
 
