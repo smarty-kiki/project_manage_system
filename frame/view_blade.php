@@ -106,6 +106,7 @@ function _blade_compile_includes($value)
 
         foreach ($matches[2] as $i => $template_path) {
 
+            $template_path = trim($template_path, " \t\n\r\0\x0B'\"");
             $view_compiled_path = blade_view_compiler($template_path);
 
             $value = str_replace($matches[0][$i], "<?php include '$view_compiled_path'; ?>", $value);

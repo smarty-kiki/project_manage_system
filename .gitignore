@@ -1,4 +1,6 @@
 view/blade/*.php
+.reasonix/
+.codegraph/
 .DS_Store
 .idea/
 .vscode/
