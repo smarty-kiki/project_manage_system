@@ -1,6 +1,6 @@
 <?php
 
-// 从数组中获取值，key 支持点号分隔多层访问（如 'data.name'），支持 * 通配符遍历子数组，default 可为闭包延迟求值
+// key 支持点号分隔多层访问（如 'data.name'），支持 * 通配符遍历子数组
 function array_get($array, $key, $default = null)
 {/*{{{*/
     $delimiter = '.';
@@ -41,7 +41,7 @@ function array_get($array, $key, $default = null)
     return $array;
 }/*}}}*/
 
-// 在数组中设置值，key 支持点号分隔（如 'data.name'），中间层不存在时自动创建为空数组
+// key 支持点号分隔，中间层不存在时自动创建
 function array_set($array, $key, $value)
 {/*{{{*/
     $res_array = &$array;
@@ -67,7 +67,7 @@ function array_set($array, $key, $value)
     return $res_array;
 }/*}}}*/
 
-// 检查数组中是否存在某个 key，key 支持点号分隔多层检查（如 'data.name'）
+// key 支持点号分隔多层检查
 function array_exists($array, $key)
 {/*{{{*/
     if (is_null($key)) {
@@ -85,7 +85,7 @@ function array_exists($array, $key)
     return true;
 }/*}}}*/
 
-// 从数组中删除元素，keys 支持点号分隔，可传单个字符串或字符串数组批量删除
+// keys 支持点号分隔，可传字符串或字符串数组批量删除
 function array_forget(&$array, $keys)
 {/*{{{*/
     $original = &$array;
@@ -107,13 +107,12 @@ function array_forget(&$array, $keys)
     }
 }/*}}}*/
 
-// 将数组分割为 [键数组, 值数组]，通常配合 list($keys, $values) 使用
 function array_divide($array)
 {/*{{{*/
     return array(array_keys($array), array_values($array));
 }/*}}}*/
 
-// 遍历数组用回调构建新数组，回调接收 $key 和 $value 返回 [新key, 新value]，新 key 为 null 时追加为索引数组
+// 回调接收 $key, $value 返回 [新key, 新value]，新key 为 null 时追加为索引数组
 function array_build($array, $callback)
 {/*{{{*/
     $results = [];
@@ -133,7 +132,7 @@ function array_build($array, $callback)
     return $results;
 }/*}}}*/
 
-// 对数组进行两层分组，回调接收 $key 和 $value 返回 [索引, 新key, 新value]，构建 $result[索引][新key] = 新value 结构
+// 回调返回 [索引, 新key, 新value]，构建 $result[索引][新key] = 新value 两层分组
 function array_indexed(array $array, closure $callback)
 {/*{{{*/
     $results = [];
@@ -162,7 +161,7 @@ function array_indexed(array $array, closure $callback)
     return $results;
 }/*}}}*/
 
-// array_get 的批量版，按 keys 列表提取值，keys 中每项支持点号分隔，通常配合 list($a, $b) 解构
+// array_get 批量版
 function array_list(array $array, array $keys)
 {/*{{{*/
     if (empty($keys)) {
@@ -178,7 +177,7 @@ function array_list(array $array, array $keys)
     return $values;
 }/*}}}*/
 
-// 按映射规则转换数组结构，rules 为 [来源key => 目标key] 键值对，来源和目标 key 均支持点号分隔
+// rules 为 [来源key => 目标key]，来源和目标 key 均支持点号
 function array_transfer(array $array, array $rules)
 {/*{{{*/
     if (empty($rules)) {
@@ -194,7 +193,6 @@ function array_transfer(array $array, array $rules)
     return $values;
 }/*}}}*/
 
-// 字符串尾部省略，超出 len 时截断并以 suffix 结尾，len 为最终字符串总长
 function str_tail_cut($string, $len, $suffix = '...')
 {/*{{{*/
     $strlen = mb_strlen($string);
@@ -207,7 +205,6 @@ function str_tail_cut($string, $len, $suffix = '...')
     return $string;
 }/*}}}*/
 
-// 字符串头部省略，超出 len 时截断并以 prefix 开头，len 为最终字符串总长
 function str_head_cut($string, $len, $prefix = '...')
 {/*{{{*/
     $strlen = mb_strlen($string);
@@ -220,7 +217,6 @@ function str_head_cut($string, $len, $prefix = '...')
     return $string;
 }/*}}}*/
 
-// 字符串中部省略，超出 len 时在中间插入 middle，前后各保留约一半长度
 function str_middle_cut($string, $len, $middle = '...')
 {/*{{{*/
     $strlen = mb_strlen($string);
@@ -242,14 +238,13 @@ function str_middle_cut($string, $len, $middle = '...')
     return $string;
 }/*}}}*/
 
-// var_dump 所有传入参数后终止脚本执行
 function dd(...$args)
 {/*{{{*/
     var_dump(...$args);
     die;
 }/*}}}*/
 
-// 抛出异常并立即捕获，将调用栈输出到异常日志，message 用于检索区分
+// 抛出异常并捕获，将调用栈输出到异常日志，用于调试
 function trace($message = 'exception for trace')
 {/*{{{*/
     try {
@@ -259,13 +254,12 @@ function trace($message = 'exception for trace')
     }
 }/*}}}*/
 
-// 获取变量的值，若为闭包则执行并返回其结果，否则直接返回该值
 function value($value)
 {/*{{{*/
     return $value instanceof Closure ? $value() : $value;
 }/*}}}*/
 
-// 获取闭包的唯一标识，基于反射生成 MD5，含文件路径和行号信息，文件变更会影响标识
+// 通过反射生成，文件路径和行号变更会影响标识
 function closure_id($closure)
 {/*{{{*/
     $closure_ref = new ReflectionFunction($closure);
@@ -273,7 +267,6 @@ function closure_id($closure)
     return md5((string) $closure_ref);
 }/*}}}*/
 
-// 检查字符串是否以指定前缀开头，needles 可传字符串或字符串数组，匹配任一即返回 true
 function starts_with($haystack, $needles)
 {/*{{{*/
     foreach ((array) $needles as $needle) {
@@ -285,7 +278,6 @@ function starts_with($haystack, $needles)
     return false;
 }/*}}}*/
 
-// 检查字符串是否以指定后缀结尾，needles 可传字符串或字符串数组，匹配任一即返回 true
 function ends_with($haystack, $needles)
 {/*{{{*/
     foreach ((array) $needles as $needle)
@@ -296,7 +288,7 @@ function ends_with($haystack, $needles)
     return false;
 }/*}}}*/
 
-// 确保字符串以 cap 结尾，先去除末尾重复的 cap 再追加，已是该结尾则不变
+// 先去除末尾重复的 cap 再追加，避免重复
 function str_finish($value, $cap)
 {/*{{{*/
     $quoted = preg_quote($cap, '/');
@@ -304,7 +296,7 @@ function str_finish($value, $cap)
     return preg_replace('/(?:'.$quoted.')+$/', '', $value).$cap;
 }/*}}}*/
 
-// 确保字符串以 cap 开头，先去除开头重复的 cap 再前置，已是该开头则不变
+// 先去除开头重复的 cap 再前置，避免重复
 function str_begin($value, $cap)
 {/*{{{*/
     $quoted = preg_quote($cap, '/');
@@ -312,7 +304,7 @@ function str_begin($value, $cap)
     return $cap.preg_replace('/^(?:'.$quoted.')+/', '', $value);
 }/*}}}*/
 
-// 判断字符串是否为 URL，同时匹配 #、//、mailto:、tel: 等特殊协议前缀
+// 额外匹配 #、//、mailto:、tel: 等特殊协议前缀
 function is_url($path)
 {/*{{{*/
     if (! is_string($path)) {
@@ -326,7 +318,6 @@ function is_url($path)
     return filter_var($path, FILTER_VALIDATE_URL) !== false;
 }/*}}}*/
 
-// parse_url 的逆操作，将解析后的各组成部分拼合回完整 URL 字符串
 function unparse_url(array $parsed)
 {/*{{{*/
     $get = function ($key) use ($parsed) {
@@ -353,7 +344,7 @@ function unparse_url(array $parsed)
         (strlen($fragment) ? "#$fragment" : '');
 }/*}}}*/
 
-// 修改并返回新 URL，回调接收 parse_url 结果（其中 query 已 parse_str 为数组方便直接修改）
+// query 已 parse_str 为数组方便直接修改
 function url_transfer($url, closure $transfer_action)
 {/*{{{*/
     $url_info = parse_url($url);
@@ -370,7 +361,6 @@ function url_transfer($url, closure $transfer_action)
     return unparse_url($url_info);
 }/*}}}*/
 
-// 注册配置文件根目录或获取已注册的目录列表，传入路径时注册，传入 null 时返回列表
 function config_dir(?string $dir = null)
 {/*{{{*/
     static $container = [];
@@ -382,7 +372,7 @@ function config_dir(?string $dir = null)
     return $container;
 }/*}}}*/
 
-// 加载配置文件，先加载基础配置再按当前环境覆盖（config/{file}.php → config/{ENV}/{file}.php），结果缓存
+// 先加载 config/{file}.php，再用 config/{ENV}/{file}.php 覆盖，结果缓存
 function config($file_name)
 {/*{{{*/
     static $configs = [];
@@ -410,7 +400,7 @@ function config($file_name)
     return $configs[$file_name];
 }/*}}}*/
 
-// 解析 midwares → resources 间接配置，midware_name 查找 midwares 映射拿到 resource 名，再取 resources 中对应配置
+// midwares[name] → resource key → resources[key] 间接寻址
 function config_midware($file_name, $midware_name)
 {/*{{{*/
     static $configs = [];
@@ -429,7 +419,7 @@ function config_midware($file_name, $midware_name)
     return $configs[$identifier];
 }/*}}}*/
 
-// 立即遍历所有配置目录并加载全部配置文件，避免首次 config() 调用时的 IO 开销
+// 预加载全部配置文件，消除首次 config() 调用的 IO 开销
 function config_preload()
 {/*{{{*/
     $dirs = config_dir();
@@ -469,31 +459,27 @@ function config_preload()
     return $config_names;
 }/*}}}*/
 
-// 获取当前运行环境名，从 $_SERVER['ENV'] 取值，未设置时默认 production
+// $_SERVER['ENV'] 未设置时默认 production
 function env()
 {/*{{{*/
     return $_SERVER['ENV'] ?? 'production';
 }/*}}}*/
 
-// 判断当前环境是否为指定环境，等价于 env() === $env
 function is_env($env)
 {/*{{{*/
     return env() === $env;
 }/*}}}*/
 
-// 检查变量是否不为空，即 !empty() 的语义反转，便于链式条件判断
 function not_empty($mixed)
 {/*{{{*/
     return !empty($mixed);
 }/*}}}*/
 
-// 检查变量是否不为 null，即 !is_null() 的语义反转，便于链式条件判断
 function not_null($mixed)
 {/*{{{*/
     return !is_null($mixed);
 }/*}}}*/
 
-// 检查传入的所有变量是否都为空，可变参数，所有参数 empty() 为 true 时返回 true
 function all_empty(...$args)
 {/*{{{*/
     foreach ($args as $arg) {
@@ -504,7 +490,6 @@ function all_empty(...$args)
     return true;
 }/*}}}*/
 
-// 检查传入的所有变量是否都为 null，可变参数，所有参数 is_null() 为 true 时返回 true
 function all_null(...$args)
 {/*{{{*/
     foreach ($args as $arg) {
@@ -515,19 +500,16 @@ function all_null(...$args)
     return true;
 }/*}}}*/
 
-// 检查传入的所有变量是否都不为空，可变参数，等价于 !has_empty(...$args)
 function all_not_empty(...$args)
 {/*{{{*/
     return ! has_empty(...$args);
 }/*}}}*/
 
-// 检查传入的所有变量是否都不为 null，可变参数，等价于 !has_null(...$args)
 function all_not_null(...$args)
 {/*{{{*/
     return ! has_null(...$args);
 }/*}}}*/
 
-// 检查传入的变量中是否有空值，可变参数，任一参数 empty() 为 true 时返回 true
 function has_empty(...$args)
 {/*{{{*/
     foreach ($args as $arg) {
@@ -538,7 +520,6 @@ function has_empty(...$args)
     return false;
 }/*}}}*/
 
-// 检查传入的变量中是否有 null，可变参数，任一参数 is_null() 为 true 时返回 true
 function has_null(...$args)
 {/*{{{*/
     foreach ($args as $arg) {
@@ -549,7 +530,7 @@ function has_null(...$args)
     return false;
 }/*}}}*/
 
-// 格式化时间，expression 可为 null（当前时间）、时间戳、strtotime 相对描述（如 '+1 days'、'last friday'）
+// expression 可为 null（取当前时间）、时间戳、strtotime 相对描述
 function datetime($expression = null, $format = 'Y-m-d H:i:s')
 {/*{{{*/
     if (is_null($expression)) {
@@ -563,7 +544,7 @@ function datetime($expression = null, $format = 'Y-m-d H:i:s')
     return date($format, $time);
 }/*}}}*/
 
-// 计算两个时间的差异，format 除 DateInterval 标准格式外额外支持 %td/%th/%tm/%ts 总差异占位符
+// 额外支持 %td/%th/%tm/%ts 总差异占位符
 function datetime_diff($datetime1, $datetime2, $format = '%ts')
 {/*{{{*/
     $interval = date_diff(
@@ -591,7 +572,8 @@ function datetime_diff($datetime1, $datetime2, $format = '%ts')
     return $res;
 }/*}}}*/
 
-// 发起 HTTP 请求，可传 URL 字符串（GET）或请求信息数组，支持 retry 重试、timeouted 超时回调、HTTP 状态码回调、自定义 method/header/cookie
+// 可传 URL 字符串（GET）或配置数组，支持 retry/timeouted/状态码回调
+// 不传 method 时：有 data 为 POST，无 data 为 GET
 function http($args)
 {/*{{{*/
     $request_info = [
@@ -696,6 +678,7 @@ function http($args)
 
     curl_close($ch);
 
+    // 按 HTTP 状态码或默认回调处理响应
     if (! empty($request_info[$code]) && $request_info[$code] instanceof closure) {
         return call_user_func($request_info[$code], $res, $code);
     }
@@ -707,13 +690,11 @@ function http($args)
     return $res;
 }/*}}}*/
 
-// http() 的封装，将响应 JSON 解码为数组返回
 function http_json($args)
 {/*{{{*/
     return json_decode(http($args), true);
 }/*}}}*/
 
-// http() 的封装，通过 SimpleXML 解析响应 XML 并转为数组返回
 function http_xml($args)
 {/*{{{*/
     $raw_res = http($args);
@@ -723,7 +704,7 @@ function http_xml($args)
     return json_decode(json_encode($raw_xml), true);
 }/*}}}*/
 
-// 获取类的单例，相同类名且相同构造参数返回同一实例，不同参数则创建新实例
+// 相同类名且相同构造参数返回同一实例
 function instance($class_name, array $args = [])
 {/*{{{*/
     static $container = [];
@@ -742,13 +723,13 @@ function instance($class_name, array $args = [])
     return $container[$instance_identifier];
 }/*}}}*/
 
-// 将数据编码为 JSON 字符串，默认 JSON_UNESCAPED_UNICODE 不转义中文
+// 默认 JSON_UNESCAPED_UNICODE 不转义中文
 function json($data = [])
 {/*{{{*/
     return json_encode($data, JSON_UNESCAPED_UNICODE);
 }/*}}}*/
 
-// 按传入顺序依次定义位运算常量，值为 2^0, 2^1, 2^2...，用于位运算组合选项
+// 按顺序定义值为 2^0, 2^1, 2^2… 的常量，用于位运算组合
 function option_define(...$options)
 {/*{{{*/
     foreach ($options as $i => $option)
@@ -757,7 +738,7 @@ function option_define(...$options)
     }
 }/*}}}*/
 
-// 判断位运算组合选项中是否包含指定选项，$options 可为多个选项的位或结果（如 OPTION_A | OPTION_B）
+// $options 可为多个选项的位或结果
 function has_option($options, $define)
 {/*{{{*/
     return $options === ($options | $define);

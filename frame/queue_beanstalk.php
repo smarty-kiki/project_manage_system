@@ -1,12 +1,11 @@
 <?php
 
-// 【私有函数，禁止在其他文件中调用】抛 Beanstalkd 协议错误异常
 function _beanstalk_error($error)
 {/*{{{*/
     throw new Exception($error);
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】Beanstalkd 连接池，传入空数组清空所有连接，基于 host+port 复用 socket
+// 连接池复用
 function _beanstalk_container(array $config)
 {/*{{{*/
     static $container = [];
@@ -43,7 +42,6 @@ function _beanstalk_container(array $config)
     }
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】解析 config_key 对应的 Beanstalkd 配置并获取连接
 function _beanstalk_connection($config_key)
 {/*{{{*/
     $config = config_midware('beanstalk', $config_key);
@@ -55,7 +53,6 @@ function _beanstalk_connection($config_key)
     ]);
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】发送 quit 命令并关闭 socket 连接
 function _beanstalk_disconnect($fp)
 {/*{{{*/
     _beanstalk_connection_write($fp, 'quit');
@@ -63,13 +60,12 @@ function _beanstalk_disconnect($fp)
     return fclose($fp);
 }/*}}}*/
 
-// 关闭并清空所有 Beanstalkd 连接
 function beanstalk_close()
 {/*{{{*/
     _beanstalk_container([]);
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】从 socket 读取响应，$data_length 指定时读取定长数据块，否则按行读取
+// $data_length 指定时读取定长数据块，否则按行读取
 function _beanstalk_connection_read($fp, ?int $data_length = null)
 {/*{{{*/
     if ($data_length) {
@@ -89,14 +85,12 @@ function _beanstalk_connection_read($fp, ?int $data_length = null)
     }
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】向 socket 写入数据，自动追加 CRLF
 function _beanstalk_connection_write($fp, $data)
 {/*{{{*/
     $data .= "\r\n";
     return fwrite($fp, $data, strlen($data));
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】Beansalkd put 命令：投递任务，返回 job id
 function _beanstalk_put($fp, $priority, $delay, $run_time, $data)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf("put %d %d %d %d\r\n%s", $priority, $delay, $run_time, strlen($data), $data));
@@ -114,7 +108,6 @@ function _beanstalk_put($fp, $priority, $delay, $run_time, $data)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd use 命令：切换生产者当前 tube
 function _beanstalk_use_tube($fp, $tube)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('use %s', $tube));
@@ -129,7 +122,6 @@ function _beanstalk_use_tube($fp, $tube)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd pause-tube 命令：暂停管道的任务派发
 function _beanstalk_pause_tube($fp, $tube, $delay)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('pause-tube %s %d', $tube, $delay));
@@ -145,7 +137,6 @@ function _beanstalk_pause_tube($fp, $tube, $delay)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd reserve 命令：阻塞获取任务，timeout 为超时秒数
 function _beanstalk_reserve($fp, ?int $timeout = null)
 {/*{{{*/
     if (is_null($timeout)) {
@@ -170,7 +161,6 @@ function _beanstalk_reserve($fp, ?int $timeout = null)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd delete 命令：删除已完成任务
 function _beanstalk_delete($fp, $id)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('delete %d', $id));
@@ -186,7 +176,6 @@ function _beanstalk_delete($fp, $id)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd release 命令：将任务重新放回就绪队列，delay 为延迟秒数
 function _beanstalk_release($fp, $id, $priority, $delay)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('release %d %d %d', $id, $priority, $delay));
@@ -203,7 +192,6 @@ function _beanstalk_release($fp, $id, $priority, $delay)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd bury 命令：将任务埋入 buried 状态
 function _beanstalk_bury($fp, $id, $priority = 10)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('bury %d %d', $id, $priority));
@@ -219,7 +207,6 @@ function _beanstalk_bury($fp, $id, $priority = 10)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd touch 命令：延长任务的 TTR（Time To Run）
 function _beanstalk_touch($fp, $id)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('touch %d', $id));
@@ -235,7 +222,6 @@ function _beanstalk_touch($fp, $id)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd watch 命令：消费者关注指定 tube
 function _beanstalk_watch($fp, $tube)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('watch %s', $tube));
@@ -250,7 +236,6 @@ function _beanstalk_watch($fp, $tube)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd ignore 命令：消费者取消关注指定 tube
 function _beanstalk_ignore($fp, $tube)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('ignore %s', $tube));
@@ -266,7 +251,6 @@ function _beanstalk_ignore($fp, $tube)
     }
 }/*}}}*/
 
-// 【私有函数】解析 Beanstalkd peek 系列命令的响应，返回含 id 和 body 的数组
 function _beanstalk_peek_read($fp)
 {/*{{{*/
     $status = strtok(_beanstalk_connection_read($fp), ' ');
@@ -284,35 +268,30 @@ function _beanstalk_peek_read($fp)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd peek 命令：查看指定 job 详情
 function _beanstalk_peek($fp, $id)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('peek %d', $id));
     return _beanstalk_peek_read($fp);
 }/*}}}*/
 
-// 【私有函数】Beanstalkd peek-ready 命令：查看下一个就绪任务
 function _beanstalk_peek_ready($fp)
 {/*{{{*/
     _beanstalk_connection_write($fp, 'peek-ready');
     return _beanstalk_peek_read($fp);
 }/*}}}*/
 
-// 【私有函数】Beanstalkd peek-delayed 命令：查看下一个延迟任务
 function _beanstalk_peek_delayed($fp)
 {/*{{{*/
     _beanstalk_connection_write($fp, 'peek-delayed');
     return _beanstalk_peek_read($fp);
 }/*}}}*/
 
-// 【私有函数】Beanstalkd peek-buried 命令：查看下一个被埋任务
 function _beanstalk_peek_buried($fp)
 {/*{{{*/
     _beanstalk_connection_write($fp, 'peek-buried');
     return _beanstalk_peek_read($fp);
 }/*}}}*/
 
-// 【私有函数】Beanstalkd kick 命令：将 bound 个 buried 任务批量移回就绪队列，返回实际移动数量
 function _beanstalk_kick($fp, $bound)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('kick %d', $bound));
@@ -327,7 +306,6 @@ function _beanstalk_kick($fp, $bound)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd kick-job 命令：将指定 buried 任务移回就绪队列
 function _beanstalk_kick_job($fp, $id)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('kick-job %d', $id));
@@ -343,7 +321,6 @@ function _beanstalk_kick_job($fp, $id)
     }
 }/*}}}*/
 
-// 【私有函数】解析 Beanstalkd stats 系列命令的响应，按 data_length 读取 YAML 正文
 function _beanstalk_stats_read($fp)
 {/*{{{*/
     $status = strtok(_beanstalk_connection_read($fp), ' ');
@@ -357,14 +334,13 @@ function _beanstalk_stats_read($fp)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd stats 命令：获取服务全局统计信息
 function _beanstalk_stats($fp)
 {/*{{{*/
     _beanstalk_connection_write($fp, 'stats');
     return _beanstalk_stats_read($fp);
 }/*}}}*/
 
-// 【私有函数】Beanstalkd stats-job 命令：获取指定任务详情，$array_result 为 true 时返回解析后的关联数组而非 YAML 字符串
+// $array_result 为 true 时解析 YAML 为关联数组
 function _beanstalk_stats_job($fp, $id, $array_result = false)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('stats-job %d', $id));
@@ -389,21 +365,18 @@ function _beanstalk_stats_job($fp, $id, $array_result = false)
     return $res;
 }/*}}}*/
 
-// 【私有函数】Beanstalkd stats-tube 命令：获取指定 tube 的统计信息
 function _beanstalk_stats_tube($fp, $tube)
 {/*{{{*/
     _beanstalk_connection_write($fp, sprintf('stats-tube %s', $tube));
     return _beanstalk_stats_read($fp);
 }/*}}}*/
 
-// 【私有函数】Beanstalkd list-tubes 命令：列出所有 tube
 function _beanstalk_list_tube($fp)
 {/*{{{*/
     _beanstalk_connection_write($fp, 'list-tubes');
     return _beanstalk_stats_read($fp);
 }/*}}}*/
 
-// 【私有函数】Beanstalkd list-tube-used 命令：查看当前生产者使用的 tube
 function _beanstalk_list_tube_used($fp)
 {/*{{{*/
     _beanstalk_connection_write($fp, 'list-tube-used');
@@ -418,14 +391,12 @@ function _beanstalk_list_tube_used($fp)
     }
 }/*}}}*/
 
-// 【私有函数】Beanstalkd list-tubes-watched 命令：查看当前消费者监听的 tube 列表
 function _beanstalk_list_tube_watched($fp)
 {/*{{{*/
     _beanstalk_connection_write($fp, 'list-tubes-watched');
     return _beanstalk_stats_read($fp);
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】获取或设置当前 worker 最后 reserve 的 job id，传入 null 时获取，传入 id 时设置
 function _queue_last_reserved_job_id(?int $id = null)
 {/*{{{*/
     static $container = null;
@@ -437,7 +408,6 @@ function _queue_last_reserved_job_id(?int $id = null)
     return $container;
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】获取或设置当前 worker 最后监听的配置 key，供 queue_job_touch 等函数使用
 function _queue_last_watched_config_key(?string $config_key = null)
 {/*{{{*/
     static $container = null;
@@ -449,7 +419,7 @@ function _queue_last_watched_config_key(?string $config_key = null)
     return $container;
 }/*}}}*/
 
-// 注册或获取每次 worker 循环结束时的回调，传入闭包时注册，传入 null 时获取，在 reserve 开始前触发
+// 每次 worker 循环 reserve 前触发，通常用于连接资源回收（如 cache_close、db_close）
 function queue_finish_action(?closure $action = null)
 {/*{{{*/
     static $container = null;
@@ -461,7 +431,6 @@ function queue_finish_action(?closure $action = null)
     return $container;
 }/*}}}*/
 
-// 触发队列循环结束回调，由 queue_watch 在每次 reserve 前调用
 function queue_finish_action_trigger()
 {/*{{{*/
     $finished_action = queue_finish_action();
@@ -471,7 +440,6 @@ function queue_finish_action_trigger()
     }
 }/*}}}*/
 
-// 根据 job 名称获取已注册的 job 配置（priority、retry、tube、config_key、closure）
 function queue_job_pickup($job_name)
 {/*{{{*/
     $jobs = queue_jobs();
@@ -479,7 +447,6 @@ function queue_job_pickup($job_name)
     return $jobs[$job_name];
 }/*}}}*/
 
-// 获取或设置全部已注册的 job 列表，传入数组时注册所有 job，传入 null 时返回当前列表
 function queue_jobs(?array $jobs = null)
 {/*{{{*/
     static $container = [];
@@ -491,7 +458,7 @@ function queue_jobs(?array $jobs = null)
     return $container = $jobs;
 }/*}}}*/
 
-// 注册队列任务，$retry 为延时重试秒数数组（如 [10, 30, 60]），按 releases 次数匹配对应延迟，超出则 bury
+// retry 为延时秒数数组，按 releases 次数匹配对应延迟，超出则 bury
 function queue_job($job_name, closure $closure, $priority = 10, $retry = [], $tube = 'default', $config_key = 'default')
 {/*{{{*/
     $jobs = queue_jobs();
@@ -507,7 +474,7 @@ function queue_job($job_name, closure $closure, $priority = 10, $retry = [], $tu
     queue_jobs($jobs);
 }/*}}}*/
 
-// 投递队列任务，序列化 job_name + data 后 put 到对应 tube，返回 job id
+// 序列化 job_name + data 后 put 到对应 tube
 function queue_push($job_name, array $data = [], $delay = 0)
 {/*{{{*/
     $job = queue_job_pickup($job_name);
@@ -530,7 +497,6 @@ function queue_push($job_name, array $data = [], $delay = 0)
     return $id;
 }/*}}}*/
 
-// 暂停指定 tube 的任务派发，$delay 为暂停时长（秒），默认 1 小时
 function queue_pause($tube = 'default', $config_key = 'default', $delay = 3600)
 {/*{{{*/
     $fp = _beanstalk_connection($config_key);
@@ -538,7 +504,7 @@ function queue_pause($tube = 'default', $config_key = 'default', $delay = 3600)
     _beanstalk_pause_tube($fp, $tube, $delay);
 }/*}}}*/
 
-// 启动队列 worker，无限循环 reserve 并执行 job closure，支持 SIGTERM 优雅退出，$memory_limit 为内存上限（字节，默认 1MB）触发异常保护
+// 无限循环 reserve + 执行，支持 SIGTERM 优雅退出和内存上限保护
 function queue_watch($tube = 'default', $config_key = 'default', $memory_limit = 1048576)
 {/*{{{*/
     $out_of_run_time_deleted_job_ids = [];
@@ -626,7 +592,6 @@ function queue_watch($tube = 'default', $config_key = 'default', $memory_limit =
     }
 }/*}}}*/
 
-// 查看指定 tube 的运行状态，返回 tube 级别的统计信息
 function queue_status($tube = 'default', $config_key = 'default')
 {/*{{{*/
     $fp = _beanstalk_connection($config_key);
@@ -634,7 +599,8 @@ function queue_status($tube = 'default', $config_key = 'default')
     return _beanstalk_stats_tube($fp, $tube);
 }/*}}}*/
 
-// 延长当前 reserve 任务的 TTR（Time To Run），需在 job closure 中调用，依赖 worker 上下文中的 config_key 和 job_id
+// 在 job closure 中调用，延长当前任务的 TTR（Time To Run），
+// 防止 Beanstalkd 因任务执行超时而将其重新置为 ready 状态
 function queue_job_touch()
 {/*{{{*/
     $config_key = _queue_last_watched_config_key();

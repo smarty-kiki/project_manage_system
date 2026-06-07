@@ -1,6 +1,6 @@
 <?php
 
-// 【私有函数，禁止在其他文件中调用】解析命令行参数，-x 格式为布尔 true，--key=value 格式为字符串值，返回 [文件名, 命令, 参数数组]
+// -x 为布尔 true，--key=value 为字符串值
 function _command_prepare_arguments()
 {/*{{{*/
     static $file_name = '';
@@ -30,7 +30,6 @@ function _command_prepare_arguments()
     return [$file_name, $command, $arguments];
 }/*}}}*/
 
-// 获取命令行参数值，$default 为 null 时参数不存在则报错退出，否则返回 default
 function command_paramater($key, $default = null)
 {/*{{{*/
     list($file_name, $command, $arguments) = _command_prepare_arguments();
@@ -47,7 +46,6 @@ function command_paramater($key, $default = null)
     return $arguments[$key];
 }/*}}}*/
 
-// 注册命令并与当前命令匹配，匹配成功时执行闭包并 exit，否则将规则和描述收集到 command_not_found
 function command($rule, $description, closure $action)
 {/*{{{*/
     list($file_name, $command, $arguments) = _command_prepare_arguments();
@@ -59,7 +57,6 @@ function command($rule, $description, closure $action)
     }
 }/*}}}*/
 
-// 注册命令未匹配时的回调，传入闭包时注册，传入 null 时返回已注册的回调
 function if_command_not_found(?closure $action = null)
 {/*{{{*/
     static $container = null;
@@ -71,7 +68,7 @@ function if_command_not_found(?closure $action = null)
     return $container;
 }/*}}}*/
 
-// 内部收集所有注册命令的规则和描述，当无匹配命令时触发 if_command_not_found 回调并 exit
+// 无参调用时触发已注册的 if_command_not_found 回调；有参时收集规则
 function command_not_found(?string $rule = null, ?string $description = null)
 {/*{{{*/
     static $rules = [];
@@ -86,7 +83,6 @@ function command_not_found(?string $rule = null, ?string $description = null)
     }
 }/*}}}*/
 
-// 注册 Tab 补全回调，闭包接收 readline_info 数组，返回候选补全字符串数组
 function command_read_completions(?closure $closure = null)
 {/*{{{*/
     static $container = null;
@@ -99,7 +95,7 @@ function command_read_completions(?closure $closure = null)
     return $container;
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】带 Tab 补全的 readline 交互输入，prompt 中 \n 前的部分会直接输出
+// 带 Tab 补全的 readline 交互输入
 function _command_readline($prompt)
 {/*{{{*/
     readline_completion_function(function ($block_buffer, $block_start, $point) {
@@ -157,7 +153,7 @@ function _command_readline($prompt)
     return $result;
 }/*}}}*/
 
-// 交互式读取用户输入，传 options 时显示编号选项菜单并要求选择，否则自由输入，空输入返回 default
+// 传 options 时显示编号菜单并要求选择
 function command_read($prompt, $default = true, array $options = [])
 {/*{{{*/
     if ($options) {
@@ -183,7 +179,6 @@ function command_read($prompt, $default = true, array $options = [])
     }
 }/*}}}*/
 
-// y/n 确认输入，返回布尔值，default 为默认选择（'y' 或 'n'）
 function command_read_bool($prompt, $default = 'n')
 {/*{{{*/
     $map = [
