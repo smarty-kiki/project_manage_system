@@ -10,8 +10,8 @@ chown www-data:www-data /tmp/php_notice.log
 chown www-data:www-data /tmp/php_module.log
 
 mysql -e "create database \`default\`;\
-    GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password';\
-    GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'password';\
+    GRANT ALL PRIVILEGES ON *.* TO 'default'@'%' IDENTIFIED BY 'password';\
+    GRANT ALL PRIVILEGES ON *.* TO 'default'@'localhost' IDENTIFIED BY 'password';\
     FLUSH PRIVILEGES"
 
 ENV=development php $ROOT_DIR/public/cli.php migrate:install

@@ -6,7 +6,7 @@ return [
 
         'local' => [
             'database' => 'default',
-            'username' => 'root',
+            'username' => 'default',
             'password' => 'password',
         ],
     ],
