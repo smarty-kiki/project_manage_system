@@ -34,8 +34,10 @@ if_has_exception(function ($ex) {
         ]);
     } else {
 
-        header('Content-type: text/html');
-        return $error_info['code'].' '.$error_info['message'];
+        return render('error/500', [
+            'code' => $error_info['code'],
+            'message' => $error_info['message'],
+        ]);
     }
 });
 
