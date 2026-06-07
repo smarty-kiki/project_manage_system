@@ -72,7 +72,18 @@ if_verify(function ($action, $args) {
 
 // init 404 handler
 if_not_found(function () {
-    return 404;
+
+    if (is_ajax()) {
+
+        header('Content-type: application/json');
+        return json([
+            'code' => 404,
+            'msg' => 'Not Found',
+            'data' => [],
+        ]);
+    }
+
+    return render('error/404');
 });
 
 // init controller
