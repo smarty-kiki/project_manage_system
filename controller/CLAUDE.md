@@ -16,8 +16,8 @@ base.php          # 基础路由：首页、健康检查、错误码映射
 
 路由闭包的返回值决定 HTTP 响应体内容和 `Content-Type` 头：
 
-- **返回数组**：框架将数组 JSON 编码后作为响应体，并自动设置 `Content-Type: application/json`，请求方收到 JSON 数据。
 - **返回字符串**：框架将字符串直接作为响应体，并自动设置 `Content-Type: text/html`，请求方收到 HTML 文本。
+- **返回其他**：框架将其他结果拼装到数组结构中一起 JSON 编码后作为响应体，并自动设置 `Content-Type: application/json`，请求方收到 JSON 数据。
 
 ```php
 // 返回 JSON

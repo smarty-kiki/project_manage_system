@@ -16,7 +16,7 @@ nginx → public/index.php → bootstrap.php → 注册错误/异常处理器
 
 关键行为：
 - `if_verify` 将所有路由闭包包裹在 `unit_of_work()` 中，自动提交 Entity 变更并管理事务
-- 路由闭包返回值决定响应：数组 → JSON，字符串 → HTML
+- 路由闭包返回值决定响应：字符串 → HTML，其他 → JSON
 - 异常处理区分 AJAX 和普通请求，分别返回 JSON 或 HTML
 - 业务异常（`business_exception`）记录日志模块为 `business_exception`，其他异常记录完整堆栈
 - 当前只加载 `controller/base.php`，新增路由文件需在此手动 `include`

@@ -45,17 +45,21 @@ if_verify(function ($action, $args) {
 
         $data = call_user_func_array($action, $args);
 
-        if (is_array($data)) {
-
-            header('Content-type: application/json');
-
-            return json($data);
-
-        } else {
+        if (is_string($data)) {
 
             header('Content-type: text/html');
 
             return $data;
+
+        } else {
+
+            header('Content-type: application/json');
+
+            return json([
+                'code' => 0,
+                'msg' => '',
+                'data' => $data
+            ]);
         }
     });
 });
