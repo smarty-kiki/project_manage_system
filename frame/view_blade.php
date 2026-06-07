@@ -121,7 +121,7 @@ function _blade_compile_comments($value)
     return preg_replace('/{{--((.|\s)*?)--}}/', '<?php /*$1*/ ?>', $value);
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】编译 @php ... @endphp 块为原生 <?php ... ?>
+/* 【私有函数，禁止在其他文件中调用】编译 @php ... @endphp 块为原生 <?php ... ?> */
 function _blade_compile_php_code($value)
 {/*{{{*/
     return preg_replace('/@php((.|\s)*?)@endphp/', '<?php $1 ?>', $value);
@@ -169,7 +169,7 @@ function _blade_compile_closings($value)
     return preg_replace($pattern, '$1<?php $2; ?>$3', $value);
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】编译 @else 指令为 <?php else: ?>
+/* 【私有函数，禁止在其他文件中调用】编译 @else 指令为 <?php else: ?> */
 function _blade_compile_else($value)
 {/*{{{*/
     $pattern = _blade_plain_regular('else');
@@ -177,7 +177,7 @@ function _blade_compile_else($value)
     return preg_replace($pattern, '$1<?php else: ?>$2', $value);
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】编译 @unless(expr) 为 <?php if ( !expr ): ?>，实现条件取反
+/* 【私有函数，禁止在其他文件中调用】编译 @unless(expr) 为 <?php if ( !expr ): ?>，实现条件取反 */
 function _blade_compile_unless($value)
 {/*{{{*/
     $pattern = _blade_regular('unless');
@@ -185,7 +185,7 @@ function _blade_compile_unless($value)
     return preg_replace($pattern, '$1<?php if ( !$2): ?>', $value);
 }/*}}}*/
 
-// 【私有函数，禁止在其他文件中调用】编译 @endunless 为 <?php endif; ?>
+/* 【私有函数，禁止在其他文件中调用】编译 @endunless 为 <?php endif; ?> */
 function _blade_compile_endunless($value)
 {/*{{{*/
     $pattern = _blade_plain_regular('endunless');
