@@ -1,8 +1,6 @@
 <?php
 
 define('MIGRATION_DIR', COMMAND_DIR.'/migration/sql');
-define('MIGRATION_TMP_DIR_NAME', 'tmp');
-define('MIGRATION_TMP_DIR', MIGRATION_DIR.'/'.MIGRATION_TMP_DIR_NAME);
 define('MIGRATION_MERGED_DIR_NAME', 'merged');
 define('MIGRATION_MERGED_DIR', MIGRATION_DIR.'/'.MIGRATION_MERGED_DIR_NAME);
 define('MIGRATION_TABLE', 'migrations');
@@ -12,28 +10,12 @@ function _migration_files()
 {
     $files = scandir(MIGRATION_DIR);
 
-    return array_diff($files, ['.', '..', '.gitkeep', MIGRATION_TMP_DIR_NAME, MIGRATION_MERGED_DIR_NAME]);
-}
-
-function _migration_tmp_files()
-{
-    $files = scandir(MIGRATION_TMP_DIR);
-
-    $files = array_diff($files, ['.', '..', '.gitkeep']);
-
-    return array_map(function ($path) {
-        return MIGRATION_TMP_DIR_NAME.'/'.$path;
-    }, $files);
+    return array_diff($files, ['.', '..', '.gitkeep', MIGRATION_MERGED_DIR_NAME]);
 }
 
 function migration_file_path($name)
 {
     return MIGRATION_DIR.'/'.date('Y_m_d_H_i_s_').$name.'.sql';
-}
-
-function migration_tmp_file_path($name)
-{
-    return MIGRATION_TMP_DIR.'/'.date('Y_m_d_H_i_s_').$name.'.sql';
 }
 
 function _migration_file_explode($filepath)
@@ -421,29 +403,14 @@ command('migrate:uninstall', '删除 migrate 所需的表结构', function ()
 
 command('migrate', '执行 migrate', function ()
 {
-    $is_tmp_files = command_paramater('tmp_files', false);
-    $with_tmp_files = command_paramater('with_tmp_files', false);
-
-    $files = [];
-    if ($is_tmp_files) {
-
-    $files = $is_tmp_files ? _migration_tmp_files(): _migration_files();
-    } else {
-
-        $files = _migration_files();
-        if ($with_tmp_files) {
-            $files = array_merge($files, _migration_tmp_files());
-        }
-    }
+    $files = _migration_files();
 
     _migration_run($files);
 });
 
 command('migrate:dry-run', '展示将要跑的 sql', function ()
 {
-    $is_tmp_files = command_paramater('tmp_files', false);
-
-    $files = $is_tmp_files ? _migration_tmp_files(): _migration_files();
+    $files = _migration_files();
 
     $old_migrations = db_query_column('migration', 'select * from '.MIGRATION_TABLE, [], 'migrate');
     $new_migrations = array_diff($files, $old_migrations);
@@ -576,33 +543,4 @@ command('migrate:make-merge', '新建 migration merge', function ()
 command('migrate:reset', '回滚所有 migrate', function ()
 {
     _migration_reset();
-});
-
-command('migrate:generate-diff', '生成 tmp migration 与正式 migration 的差别变更', function ()
-{
-    _migration_reset();
-    _migration_run(_migration_files());
-    $old_db_detail = _migration_db_detail();
-
-    _migration_reset();
-    _migration_run(_migration_tmp_files());
-    $new_db_detail = _migration_db_detail();
-
-    $up_sqls = _migration_detail_diff_to_sql($new_db_detail, $old_db_detail);
-    $down_sqls = _migration_detail_diff_to_sql($old_db_detail, $new_db_detail);
-
-    if ($up_sqls && $down_sqls) {
-
-        $file = migration_file_path('diff_generated');
-        _migration_file_implode($up_sqls, $down_sqls, $file);
-        echo "generate $file success!\n";
-
-        _migration_reset();
-        _migration_run(_migration_files());
-    } else {
-        echo "\033[31mno different!\n\033[0m";
-
-        _migration_reset();
-        _migration_run(_migration_files());
-    }
 });
