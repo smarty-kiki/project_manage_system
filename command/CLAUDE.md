@@ -20,7 +20,6 @@ command/
 ├── migration/
 │   ├── migrate.php         # 数据库迁移命令
 │   └── sql/
-│       ├── tmp/            # 临时/开发环境迁移 SQL 文件
 │       └── merged/         # 合并后的迁移归档（按 MD5 签名去重）
 └── queue/
     ├── queue.php           # Beanstalk 队列管理命令
@@ -35,9 +34,8 @@ command/
 
 **新增迁移文件规范：**
 
-- **正式迁移文件**：放置在 `command/migration/sql/` 目录。文件名格式为 `YYYY_mm_dd_HH_MM_SS_描述.sql`（如 `2026_06_06_10_30_00_add_user_table.sql`）。手动创建时严格按此规则命名，全部下划线分隔，描述使用英文蛇形小写，**时分秒必须填写当前实际时间，禁止使用 `00_00_00` 占位**。
-- **临时/开发环境迁移文件**：放置在 `command/migration/sql/tmp/` 目录。文件名格式同上。执行 migration 时需加 `--with_tmp_files` 或 `--tmp_files` 参数。
-- **SQL 文件格式**：必须包含 `# up` 和 `# down` 两部分，分别编写正向迁移和回滚 SQL，每条语句以 `;` 结尾。示例参见 `command/migration/sql/tmp/2026_02_06_23_38_20_demo.sql`。
+- **迁移文件**：放置在 `command/migration/sql/` 目录。文件名格式为 `YYYY_mm_dd_HH_MM_SS_描述.sql`（如 `2026_06_06_10_30_00_add_user_table.sql`）。手动创建时严格按此规则命名，全部下划线分隔，描述使用英文蛇形小写，**时分秒必须填写当前实际时间，禁止使用 `00_00_00` 占位**。
+- **SQL 文件格式**：必须包含 `# up` 和 `# down` 两部分，分别编写正向迁移和回滚 SQL，每条语句以 `;` 结尾。示例参见 `command/migration/sql/2026_02_06_23_38_20_demo.sql`。
 
 **命令列表：**
 
@@ -45,7 +43,7 @@ command/
 |---|---|
 | `migrate:install` | 创建 `migrations` 追踪表 |
 | `migrate:uninstall` | 删除 `migrations` 追踪表 |
-| `migrate` | 执行待迁移文件，支持 `--tmp_files` 和 `--with_tmp_files` 参数 |
+| `migrate` | 执行待迁移文件 |
 | `migrate:dry-run` | 展示将会执行的 SQL，不真正执行 |
 | `migrate:make --name=xxx` | 对比数据库当前结构与迁移文件定义结构的差异，生成补差迁移 SQL 文件 |
 | `migrate:make-merge` | 将所有已有迁移文件合并为一个合并迁移，原始文件归档到 `merged/` 目录，通过 MD5 签名去重 |
@@ -53,7 +51,7 @@ command/
 | `migrate:rollback` | 回滚最近一批迁移 |
 | `migrate:reset` | 回滚全部迁移 |
 
-**关键常量**: `MIGRATION_DIR`、`MIGRATION_TMP_DIR`、`MIGRATION_MERGED_DIR`、`MIGRATION_TABLE`（值为 `migrations`）。
+**关键常量**: `MIGRATION_DIR`、`MIGRATION_MERGED_DIR`、`MIGRATION_TABLE`（值为 `migrations`）。
 
 追踪表结构：`id`（自增）、`migration`（文件名）、`batch`（批次号，整数）。
 
