@@ -10,7 +10,6 @@ define('ENTITY_DEFAULT_ERROR_CODE', 'ENTITY_DEFAULT_ERROR');
 // 配合 Unit of Work 自动持久化：just_new → INSERT，just_updated → UPDATE + 乐观锁，just_deleted → 软删除。
 abstract class entity implements JsonSerializable, Serializable
 {
-    /*{{{*/
     const INIT_VERSION = 0;
 
     // 五个系统字段由框架管理，子类在 $structs 中只需声明业务字段
@@ -315,13 +314,12 @@ abstract class entity implements JsonSerializable, Serializable
         return $relationship_ref->batch_load($from_entities, $relationship_name);
     }
 
-}/*}}}*/
+}
 
 // 空对象模式：dao 查询无结果时返回此对象，链式访问不报错，避免 NPE。
 // $null_entity_mock_attributes 允许子类声明属性默认值，如 null_entity('user')->status → 1
 class null_entity extends entity
 {
-    /*{{{*/
     public $id = 0;
 
     private $mock_entity_name = null;
@@ -367,21 +365,19 @@ class null_entity extends entity
     {
         return '空';
     }
-}/*}}}*/
+}
 
 abstract class relationship_ref
 {
-    /*{{{*/
     abstract public function load(entity $from_entity);
     abstract public function batch_load(array $from_entity, $relationship_name);
     // $values: 新赋值的实体/实体数组；$old_value: 旧的关联实体，用于解除旧外键绑定
     abstract public function update($values, entity $from_entity, $old_value);
-}/*}}}*/
+}
 
 // has_one：子实体表含 foreign_key，通过 foreign_key = from_entity.id 查询唯一子实体
 class has_one extends relationship_ref
 {
-    /*{{{*/
     private $entity_name;
     private $foreign_key;
     private $with_deleted;
@@ -429,12 +425,11 @@ class has_one extends relationship_ref
             $entity->{$this->foreign_key} = $from_entity->id;
         }
     }
-}/*}}}*/
+}
 
 // belongs_to：本实体表含 foreign_key，通过 foreign_key 值查询父实体
 class belongs_to extends relationship_ref
 {
-    /*{{{*/
     private $entity_name;
     private $foreign_key;
     private $with_deleted;
@@ -487,12 +482,11 @@ class belongs_to extends relationship_ref
             $from_entity->{$this->foreign_key} = 0;
         }
     }
-}/*}}}*/
+}
 
 // has_many：子实体表含 foreign_key，通过 foreign_key = from_entity.id 查询多条子实体
 class has_many extends relationship_ref
 {
-    /*{{{*/
     private $entity_name;
     private $foreign_key;
     private $with_deleted;
@@ -552,11 +546,10 @@ class has_many extends relationship_ref
             $entity->{$this->foreign_key} = $from_entity->id;
         }
     }
-}/*}}}*/
+}
 
 abstract class dao
 {
-    /*{{{*/
     // class_name 由构造函数从类名自动推导（去掉 _dao 后缀）
     protected $class_name;
     protected $table_name;
@@ -565,20 +558,20 @@ abstract class dao
     protected $with_deleted;
 
     public function __construct()
-    {/*{{{*/
+    {
         $this->class_name = substr(get_class($this), 0, -4);
-    }/*}}}*/
+    }
 
     public function set_with_deleted($with_deleted)
-    {/*{{{*/
+    {
         $this->with_deleted = $with_deleted;
-    }/*}}}*/
+    }
 
     // 三个方法是软删除过滤的规范入口，仅区别前缀连接词：and / where / where...and。
     // DAO 子类新增 find_by_xxx / find_all_by_xxx 拼接 SQL 时统一调用这三个方法注入软删除条件，禁止手写 delete_time is null
 
     final protected function with_deleted_and_sql(?string $alias = null)
-    {/*{{{*/
+    {
         $alias = $alias ? $alias.'.': '';
 
         if ($this->with_deleted) {
@@ -586,10 +579,10 @@ abstract class dao
         } else {
             return ' and '.$alias.'delete_time is null';
         }
-    }/*}}}*/
+    }
 
     final protected function with_deleted_where_sql(?string $alias = null)
-    {/*{{{*/
+    {
         $alias = $alias ? $alias.'.': '';
 
         if ($this->with_deleted) {
@@ -597,10 +590,10 @@ abstract class dao
         } else {
             return ' where '.$alias.'delete_time is null';
         }
-    }/*}}}*/
+    }
 
     final protected function with_deleted_where_sql_and(?string $alias = null)
-    {/*{{{*/
+    {
         $alias = $alias ? $alias.'.': '';
 
         if ($this->with_deleted) {
@@ -608,11 +601,11 @@ abstract class dao
         } else {
             return ' where '.$alias.'delete_time is null and';
         }
-    }/*}}}*/
+    }
 
     // 本地缓存作为 read-through 缓存：命中直接返回，未命中查库并写入缓存，不存在返回 null_entity 而非 null
     public function find_by_id($id)
-    {/*{{{*/
+    {
         if (empty($id)) {
             return null_entity::create($this->class_name);
         }
@@ -633,10 +626,10 @@ abstract class dao
         }
 
         return $entity;
-    }/*}}}*/
+    }
 
     public function find_by_column(array $columns)
-    {/*{{{*/
+    {
         if (! $this->with_deleted) {
             $columns['delete_time'] = null;
         } else {
@@ -646,18 +639,18 @@ abstract class dao
         list($where, $binds) = db_simple_where_sql($columns);
 
         return $this->find_by_sql('select * from `'.$this->table_name."` where $where order by id", $binds);
-    }/*}}}*/
+    }
 
     protected function find_by_condition($condition, array $binds = [])
-    {/*{{{*/
+    {
         $with_deleted_sql = $this->with_deleted_where_sql_and();
 
         return $this->find_by_sql('select * from `'.$this->table_name.'`'.$with_deleted_sql.' '.$condition, $binds);
-    }/*}}}*/
+    }
 
     // 单条查询内部基方法：查库并回写本地缓存，不存在返回 null_entity
     protected function find_by_sql($sql_template, array $binds = [])
-    {/*{{{*/
+    {
         $row = db_query_first($sql_template, $binds, $this->db_config_key);
 
         if (empty($row)) {
@@ -673,11 +666,11 @@ abstract class dao
         local_cache_set($entity);
 
         return $entity;
-    }/*}}}*/
+    }
 
     // 按 ID 列表批量查询，用 find_in_set 排序确保返回数组顺序与 $ids 输入顺序一致
     public function find_all_by_ids(array $ids)
-    {/*{{{*/
+    {
         if (empty($ids)) {
             return [];
         }
@@ -706,24 +699,24 @@ abstract class dao
         }
 
         return $entities;
-    }/*}}}*/
+    }
 
     public function find_all()
-    {/*{{{*/
+    {
         $with_deleted_sql = $this->with_deleted_where_sql();
 
         return $this->find_all_by_sql('select * from `'.$this->table_name.'`'.$with_deleted_sql.' order by id', []);
-    }/*}}}*/
+    }
 
     public function find_all_order_by_id_desc()
-    {/*{{{*/
+    {
         $with_deleted_sql = $this->with_deleted_where_sql();
 
         return $this->find_all_by_sql('select * from `'.$this->table_name.'`'.$with_deleted_sql.' order by id desc', []);
-    }/*}}}*/
+    }
 
     public function find_all_by_column(array $columns)
-    {/*{{{*/
+    {
         if ($columns) {
 
             if (! $this->with_deleted) {
@@ -738,16 +731,16 @@ abstract class dao
         } else {
             return $this->find_all();
         }
-    }/*}}}*/
+    }
 
     protected function find_all_by_condition($condition, array $binds = [])
-    {/*{{{*/
+    {
         return $this->find_all_by_sql('select * from `'.$this->table_name.'` where '.  $condition, $binds);
-    }/*}}}*/
+    }
 
     // 多条查询内部基方法：查库并回写本地缓存，返回数组 key 为实体 id
     protected function find_all_by_sql($sql_template, array $binds = [])
-    {/*{{{*/
+    {
         $entities = [];
 
         $rows = db_query($sql_template, $binds, $this->db_config_key);
@@ -762,10 +755,10 @@ abstract class dao
         }
 
         return $entities;
-    }/*}}}*/
+    }
 
     protected function find_all_grouped_entities_by_sql($group_key, $sql_template, array $binds = [])
-    {/*{{{*/
+    {
         $entities = [];
 
         $rows = db_query($sql_template, $binds, $this->db_config_key);
@@ -786,10 +779,10 @@ abstract class dao
         }
 
         return $entities;
-    }/*}}}*/
+    }
 
     public function find_all_paginated_by_current_page_and_column($current_page, $page_size, array $columns)
-    {/*{{{*/
+    {
         $res = [
             'list' => [],
             'pagination' => [
@@ -814,10 +807,10 @@ abstract class dao
         $res['list'] = $this->find_all_by_condition($condition." limit $offset, $page_size", $binds);
 
         return $res;
-    }/*}}}*/
+    }
 
     public function find_all_paginated_by_current_page_and_condition($current_page, $page_size, $condition, array $binds = [])
-    {/*{{{*/
+    {
         $res = [
             'list' => [],
             'pagination' => [
@@ -841,29 +834,29 @@ abstract class dao
         $res['list'] = $this->find_all_by_condition($condition." limit $offset, $page_size", $binds);
 
         return $res;
-    }/*}}}*/
+    }
 
     public function count()
-    {/*{{{*/
+    {
         $with_deleted_sql = $this->with_deleted_where_sql();
 
         $sql = 'select count(*) as count from `'.$this->table_name.'`'.$with_deleted_sql;
 
         return db_query_value('count', $sql, [], $this->db_config_key);
-    }/*}}}*/
+    }
 
     protected function count_by_condition($condition, array $binds = [])
-    {/*{{{*/
+    {
         $with_deleted_sql = $this->with_deleted_where_sql_and();
 
         $sql = 'select count(*) as count from `'.$this->table_name.'`'.$with_deleted_sql.' '.$condition;
 
         return db_query_value('count', $sql, $binds, $this->db_config_key);
-    }/*}}}*/
+    }
 
     // 计算实体脏数据：对比 attributes 与 structs，提取变更列，自动递增 version 并刷新 update_time
     private function get_dirty($entity)
-    {/*{{{*/
+    {
         $rows = [];
 
         foreach ($entity->attributes as $column => $value) {
@@ -877,11 +870,11 @@ abstract class dao
         $rows['delete_time'] = $entity->delete_time;
 
         return $rows;
-    }/*}}}*/
+    }
 
     // 将数据库行转换为实体：id/version/create_time/update_time/delete_time 提升为对象属性，其余字段存入 structs(=attributes)
     private function row_to_entity($rows)
-    {/*{{{*/
+    {
         $entity = new $this->class_name();
 
         $entity->id = $rows['id'];
@@ -899,16 +892,16 @@ abstract class dao
         $entity->attributes = $entity->structs = $rows;
 
         return $entity;
-    }/*}}}*/
+    }
 
     final public function get_db_config_key()
-    {/*{{{*/
+    {
         return $this->db_config_key;
-    }/*}}}*/
+    }
 
     // 以下三个 dump_*_sql 方法仅供 Unit of Work 在提交阶段调用，生成待在事务中执行的 SQL
     final public function dump_insert_sql($entity)
-    {/*{{{*/
+    {
         $columns = $values = $binds = [];
 
         $insert = $entity->attributes + [
@@ -928,10 +921,10 @@ abstract class dao
             'sql_template' => 'insert into `'.$this->table_name.'` (`'.implode('`, `', $columns).'`) values ('.implode(', ', $values).')',
             'binds' => $binds,
         ];
-    }/*}}}*/
+    }
 
     final public function dump_update_sql($entity)
-    {/*{{{*/
+    {
         $binds = $update = [];
 
         $binds[':id'] = $entity->id;
@@ -946,18 +939,18 @@ abstract class dao
             'sql_template' => 'update `'.$this->table_name.'` set '.implode(', ', $update).' where id = :id and version = :old_version',
             'binds' => $binds,
         ];
-    }/*}}}*/
+    }
 
     final public function dump_delete_sql($entity)
-    {/*{{{*/
+    {
         return [
             'sql_template' => 'delete from `'.$this->table_name.'` where id = :id',
             'binds' => [
                 ':id' => $entity->id,
             ],
         ];
-    }/*}}}*/
-}/*}}}*/
+    }
+}
 
 function dao($class_name, $with_deleted = false)
 {

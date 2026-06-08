@@ -1,7 +1,7 @@
 <?php
 
 command('entity:restep-last-id', '刷新 ID 生成器的最新 id', function ()
-{/*{{{*/
+{
     $res = db_query('show tables');
 
     $entity_title = 'entity';
@@ -42,4 +42,4 @@ command('entity:restep-last-id', '刷新 ID 生成器的最新 id', function ()
     foreach ($max_id_infos as $table => $max_id) {
         echo str_pad($table, $col_width, ' ').$max_id."\n";
     }
-});/*}}}*/
+});

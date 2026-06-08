@@ -2,7 +2,7 @@
 
 // key 支持点号分隔多层访问（如 'data.name'），支持 * 通配符遍历子数组
 function array_get($array, $key, $default = null)
-{/*{{{*/
+{
     $delimiter = '.';
 
     if (is_null($key)) {
@@ -39,11 +39,11 @@ function array_get($array, $key, $default = null)
     }
 
     return $array;
-}/*}}}*/
+}
 
 // key 支持点号分隔，中间层不存在时自动创建
 function array_set($array, $key, $value)
-{/*{{{*/
+{
     $res_array = &$array;
 
     if (is_null($key)) {
@@ -65,11 +65,11 @@ function array_set($array, $key, $value)
     $array[array_shift($keys)] = $value;
 
     return $res_array;
-}/*}}}*/
+}
 
 // key 支持点号分隔多层检查
 function array_exists($array, $key)
-{/*{{{*/
+{
     if (is_null($key)) {
         return false;
     }
@@ -83,11 +83,11 @@ function array_exists($array, $key)
     }
 
     return true;
-}/*}}}*/
+}
 
 // keys 支持点号分隔，可传字符串或字符串数组批量删除
 function array_forget(&$array, $keys)
-{/*{{{*/
+{
     $original = &$array;
 
     foreach ((array) $keys as $key) {
@@ -105,16 +105,16 @@ function array_forget(&$array, $keys)
 
         $array = &$original;
     }
-}/*}}}*/
+}
 
 function array_divide($array)
-{/*{{{*/
+{
     return array(array_keys($array), array_values($array));
-}/*}}}*/
+}
 
 // 回调接收 $key, $value 返回 [新key, 新value]，新key 为 null 时追加为索引数组
 function array_build($array, $callback)
-{/*{{{*/
+{
     $results = [];
 
     foreach ($array as $key => $value) {
@@ -130,11 +130,11 @@ function array_build($array, $callback)
     }
 
     return $results;
-}/*}}}*/
+}
 
 // 回调返回 [索引, 新key, 新value]，构建 $result[索引][新key] = 新value 两层分组
 function array_indexed(array $array, closure $callback)
-{/*{{{*/
+{
     $results = [];
 
     foreach ($array as $key => $value) {
@@ -159,11 +159,11 @@ function array_indexed(array $array, closure $callback)
     }
 
     return $results;
-}/*}}}*/
+}
 
 // array_get 批量版
 function array_list(array $array, array $keys)
-{/*{{{*/
+{
     if (empty($keys)) {
         return [];
     }
@@ -175,11 +175,11 @@ function array_list(array $array, array $keys)
     }
 
     return $values;
-}/*}}}*/
+}
 
 // rules 为 [来源key => 目标key]，来源和目标 key 均支持点号
 function array_transfer(array $array, array $rules)
-{/*{{{*/
+{
     if (empty($rules)) {
         return [];
     }
@@ -191,10 +191,10 @@ function array_transfer(array $array, array $rules)
     }
 
     return $values;
-}/*}}}*/
+}
 
 function str_tail_cut($string, $len, $suffix = '...')
-{/*{{{*/
+{
     $strlen = mb_strlen($string);
     $suffixlen = mb_strlen($suffix);
 
@@ -203,10 +203,10 @@ function str_tail_cut($string, $len, $suffix = '...')
     }
 
     return $string;
-}/*}}}*/
+}
 
 function str_head_cut($string, $len, $prefix = '...')
-{/*{{{*/
+{
     $strlen = mb_strlen($string);
     $prefixlen = mb_strlen($prefix);
 
@@ -215,10 +215,10 @@ function str_head_cut($string, $len, $prefix = '...')
     }
 
     return $string;
-}/*}}}*/
+}
 
 function str_middle_cut($string, $len, $middle = '...')
-{/*{{{*/
+{
     $strlen = mb_strlen($string);
     $middlelen = mb_strlen($middle);
 
@@ -236,39 +236,39 @@ function str_middle_cut($string, $len, $middle = '...')
     }
 
     return $string;
-}/*}}}*/
+}
 
 function dd(...$args)
-{/*{{{*/
+{
     var_dump(...$args);
     die;
-}/*}}}*/
+}
 
 // 抛出异常并捕获，将调用栈输出到异常日志，用于调试
 function trace($message = 'exception for trace')
-{/*{{{*/
+{
     try {
         throw new Exception($message);
     } catch (Exception $ex) {
         log_exception($ex);
     }
-}/*}}}*/
+}
 
 function value($value)
-{/*{{{*/
+{
     return $value instanceof Closure ? $value() : $value;
-}/*}}}*/
+}
 
 // 通过反射生成，文件路径和行号变更会影响标识
 function closure_id($closure)
-{/*{{{*/
+{
     $closure_ref = new ReflectionFunction($closure);
 
     return md5((string) $closure_ref);
-}/*}}}*/
+}
 
 function starts_with($haystack, $needles)
-{/*{{{*/
+{
     foreach ((array) $needles as $needle) {
         if ($needle != '' && mb_strpos($haystack, $needle) === 0) {
             return true;
@@ -276,37 +276,37 @@ function starts_with($haystack, $needles)
     }
 
     return false;
-}/*}}}*/
+}
 
 function ends_with($haystack, $needles)
-{/*{{{*/
+{
     foreach ((array) $needles as $needle)
     {
         if ((string) $needle === mb_substr($haystack, - mb_strlen($needle))) return true;
     }
 
     return false;
-}/*}}}*/
+}
 
 // 先去除末尾重复的 cap 再追加，避免重复
 function str_finish($value, $cap)
-{/*{{{*/
+{
     $quoted = preg_quote($cap, '/');
 
     return preg_replace('/(?:'.$quoted.')+$/', '', $value).$cap;
-}/*}}}*/
+}
 
 // 先去除开头重复的 cap 再前置，避免重复
 function str_begin($value, $cap)
-{/*{{{*/
+{
     $quoted = preg_quote($cap, '/');
 
     return $cap.preg_replace('/^(?:'.$quoted.')+/', '', $value);
-}/*}}}*/
+}
 
 // 额外匹配 #、//、mailto:、tel: 等特殊协议前缀
 function is_url($path)
-{/*{{{*/
+{
     if (! is_string($path)) {
         return false;
     }
@@ -316,10 +316,10 @@ function is_url($path)
     }
 
     return filter_var($path, FILTER_VALIDATE_URL) !== false;
-}/*}}}*/
+}
 
 function unparse_url(array $parsed)
-{/*{{{*/
+{
     $get = function ($key) use ($parsed) {
         return isset($parsed[$key]) ? $parsed[$key] : null;
     };
@@ -342,11 +342,11 @@ function unparse_url(array $parsed)
         $get('path') .
         (strlen($query) ? "?$query" : '') .
         (strlen($fragment) ? "#$fragment" : '');
-}/*}}}*/
+}
 
 // query 已 parse_str 为数组方便直接修改
 function url_transfer($url, closure $transfer_action)
-{/*{{{*/
+{
     $url_info = parse_url($url);
 
     if (isset($url_info['query'])) {
@@ -359,10 +359,10 @@ function url_transfer($url, closure $transfer_action)
     $url_info['query'] = http_build_query($url_info['query']);
 
     return unparse_url($url_info);
-}/*}}}*/
+}
 
 function config_dir(?string $dir = null)
-{/*{{{*/
+{
     static $container = [];
 
     if (! is_null($dir)) {
@@ -370,11 +370,11 @@ function config_dir(?string $dir = null)
     }
 
     return $container;
-}/*}}}*/
+}
 
 // 先加载 config/{file}.php，再用 config/{ENV}/{file}.php 覆盖，结果缓存
 function config($file_name)
-{/*{{{*/
+{
     static $configs = [];
 
     if (! isset($configs[$file_name])) {
@@ -398,11 +398,11 @@ function config($file_name)
     }
 
     return $configs[$file_name];
-}/*}}}*/
+}
 
 // midwares[name] → resource key → resources[key] 间接寻址
 function config_midware($file_name, $midware_name)
-{/*{{{*/
+{
     static $configs = [];
 
     $identifier = $midware_name.'_'.$file_name;
@@ -417,11 +417,11 @@ function config_midware($file_name, $midware_name)
     }
 
     return $configs[$identifier];
-}/*}}}*/
+}
 
 // 预加载全部配置文件，消除首次 config() 调用的 IO 开销
 function config_preload()
-{/*{{{*/
+{
     $dirs = config_dir();
 
     $config_names = [];
@@ -457,82 +457,82 @@ function config_preload()
     }
 
     return $config_names;
-}/*}}}*/
+}
 
 // $_SERVER['ENV'] 未设置时默认 production
 function env()
-{/*{{{*/
+{
     return $_SERVER['ENV'] ?? 'production';
-}/*}}}*/
+}
 
 function is_env($env)
-{/*{{{*/
+{
     return env() === $env;
-}/*}}}*/
+}
 
 function not_empty($mixed)
-{/*{{{*/
+{
     return !empty($mixed);
-}/*}}}*/
+}
 
 function not_null($mixed)
-{/*{{{*/
+{
     return !is_null($mixed);
-}/*}}}*/
+}
 
 function all_empty(...$args)
-{/*{{{*/
+{
     foreach ($args as $arg) {
 
         if (not_empty($arg)) return false;
     }
 
     return true;
-}/*}}}*/
+}
 
 function all_null(...$args)
-{/*{{{*/
+{
     foreach ($args as $arg) {
 
         if (not_null($arg)) return false;
     }
 
     return true;
-}/*}}}*/
+}
 
 function all_not_empty(...$args)
-{/*{{{*/
+{
     return ! has_empty(...$args);
-}/*}}}*/
+}
 
 function all_not_null(...$args)
-{/*{{{*/
+{
     return ! has_null(...$args);
-}/*}}}*/
+}
 
 function has_empty(...$args)
-{/*{{{*/
+{
     foreach ($args as $arg) {
 
         if (empty($arg)) return true;
     }
 
     return false;
-}/*}}}*/
+}
 
 function has_null(...$args)
-{/*{{{*/
+{
     foreach ($args as $arg) {
 
         if (is_null($arg)) return true;
     }
 
     return false;
-}/*}}}*/
+}
 
 // expression 可为 null（取当前时间）、时间戳、strtotime 相对描述
 function datetime($expression = null, $format = 'Y-m-d H:i:s')
-{/*{{{*/
+{
     if (is_null($expression)) {
         $time = time();
     } elseif (is_numeric($expression)) {
@@ -542,11 +542,11 @@ function datetime($expression = null, $format = 'Y-m-d H:i:s')
     }
 
     return date($format, $time);
-}/*}}}*/
+}
 
 // 额外支持 %td/%th/%tm/%ts 总差异占位符
 function datetime_diff($datetime1, $datetime2, $format = '%ts')
-{/*{{{*/
+{
     $interval = date_diff(
         date_create($datetime1),
         date_create($datetime2)
@@ -570,12 +570,12 @@ function datetime_diff($datetime1, $datetime2, $format = '%ts')
     }
 
     return $res;
-}/*}}}*/
+}
 
 // 可传 URL 字符串（GET）或配置数组，支持 retry/timeouted/状态码回调
 // 不传 method 时：有 data 为 POST，无 data 为 GET
 function http($args)
-{/*{{{*/
+{
     $request_info = [
         'url' => 'http://127.0.0.1/',
         //'method' => 'GET',
@@ -688,25 +688,25 @@ function http($args)
     }
 
     return $res;
-}/*}}}*/
+}
 
 function http_json($args)
-{/*{{{*/
+{
     return json_decode(http($args), true);
-}/*}}}*/
+}
 
 function http_xml($args)
-{/*{{{*/
+{
     $raw_res = http($args);
 
     $raw_xml = simplexml_load_string($raw_res, 'SimpleXMLElement', LIBXML_NOCDATA);
 
     return json_decode(json_encode($raw_xml), true);
-}/*}}}*/
+}
 
 // 相同类名且相同构造参数返回同一实例
 function instance($class_name, array $args = [])
-{/*{{{*/
+{
     static $container = [];
 
     if (empty($args)) {
@@ -721,25 +721,25 @@ function instance($class_name, array $args = [])
     }
 
     return $container[$instance_identifier];
-}/*}}}*/
+}
 
 // 默认 JSON_UNESCAPED_UNICODE 不转义中文
 function json($data = [])
-{/*{{{*/
+{
     return json_encode($data, JSON_UNESCAPED_UNICODE);
-}/*}}}*/
+}
 
 // 按顺序定义值为 2^0, 2^1, 2^2… 的常量，用于位运算组合
 function option_define(...$options)
-{/*{{{*/
+{
     foreach ($options as $i => $option)
     {
         define($option, pow(2, $i));
     }
-}/*}}}*/
+}
 
 // $options 可为多个选项的位或结果
 function has_option($options, $define)
-{/*{{{*/
+{
     return $options === ($options | $define);
-}/*}}}*/
+}

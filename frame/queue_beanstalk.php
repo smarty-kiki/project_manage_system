@@ -1,13 +1,13 @@
 <?php
 
 function _beanstalk_error($error)
-{/*{{{*/
+{
     throw new Exception($error);
-}/*}}}*/
+}
 
 // 连接池复用
 function _beanstalk_container(array $config)
-{/*{{{*/
+{
     static $container = [];
 
     if (empty($config)) {
@@ -40,10 +40,10 @@ function _beanstalk_container(array $config)
 
         return $container[$identifier];
     }
-}/*}}}*/
+}
 
 function _beanstalk_connection($config_key)
-{/*{{{*/
+{
     $config = config_midware('beanstalk', $config_key);
 
     return _beanstalk_container([
@@ -51,23 +51,23 @@ function _beanstalk_connection($config_key)
         'port' => $config['port'],
         'timeout' => $config['timeout'],
     ]);
-}/*}}}*/
+}
 
 function _beanstalk_disconnect($fp)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, 'quit');
 
     return fclose($fp);
-}/*}}}*/
+}
 
 function beanstalk_close()
-{/*{{{*/
+{
     _beanstalk_container([]);
-}/*}}}*/
+}
 
 // $data_length 指定时读取定长数据块，否则按行读取
 function _beanstalk_connection_read($fp, ?int $data_length = null)
-{/*{{{*/
+{
     if ($data_length) {
 
         $data = stream_get_contents($fp, $data_length + 2);
@@ -83,16 +83,16 @@ function _beanstalk_connection_read($fp, ?int $data_length = null)
 
         return stream_get_line($fp, 16384, "\r\n");
     }
-}/*}}}*/
+}
 
 function _beanstalk_connection_write($fp, $data)
-{/*{{{*/
+{
     $data .= "\r\n";
     return fwrite($fp, $data, strlen($data));
-}/*}}}*/
+}
 
 function _beanstalk_put($fp, $priority, $delay, $run_time, $data)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf("put %d %d %d %d\r\n%s", $priority, $delay, $run_time, strlen($data), $data));
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
@@ -106,10 +106,10 @@ function _beanstalk_put($fp, $priority, $delay, $run_time, $data)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_use_tube($fp, $tube)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('use %s', $tube));
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
@@ -120,10 +120,10 @@ function _beanstalk_use_tube($fp, $tube)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_pause_tube($fp, $tube, $delay)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('pause-tube %s %d', $tube, $delay));
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
@@ -135,10 +135,10 @@ function _beanstalk_pause_tube($fp, $tube, $delay)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_reserve($fp, ?int $timeout = null)
-{/*{{{*/
+{
     if (is_null($timeout)) {
         _beanstalk_connection_write($fp, 'reserve');
     } else {
@@ -159,10 +159,10 @@ function _beanstalk_reserve($fp, ?int $timeout = null)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_delete($fp, $id)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('delete %d', $id));
     $status = _beanstalk_connection_read($fp);
 
@@ -174,10 +174,10 @@ function _beanstalk_delete($fp, $id)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_release($fp, $id, $priority, $delay)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('release %d %d %d', $id, $priority, $delay));
     $status = _beanstalk_connection_read($fp);
 
@@ -190,10 +190,10 @@ function _beanstalk_release($fp, $id, $priority, $delay)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_bury($fp, $id, $priority = 10)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('bury %d %d', $id, $priority));
     $status = _beanstalk_connection_read($fp);
 
@@ -205,10 +205,10 @@ function _beanstalk_bury($fp, $id, $priority = 10)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_touch($fp, $id)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('touch %d', $id));
     $status = _beanstalk_connection_read($fp);
 
@@ -220,10 +220,10 @@ function _beanstalk_touch($fp, $id)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_watch($fp, $tube)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('watch %s', $tube));
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
@@ -234,10 +234,10 @@ function _beanstalk_watch($fp, $tube)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_ignore($fp, $tube)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('ignore %s', $tube));
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
@@ -249,10 +249,10 @@ function _beanstalk_ignore($fp, $tube)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_peek_read($fp)
-{/*{{{*/
+{
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
     switch ($status) {
@@ -266,34 +266,34 @@ function _beanstalk_peek_read($fp)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_peek($fp, $id)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('peek %d', $id));
     return _beanstalk_peek_read($fp);
-}/*}}}*/
+}
 
 function _beanstalk_peek_ready($fp)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, 'peek-ready');
     return _beanstalk_peek_read($fp);
-}/*}}}*/
+}
 
 function _beanstalk_peek_delayed($fp)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, 'peek-delayed');
     return _beanstalk_peek_read($fp);
-}/*}}}*/
+}
 
 function _beanstalk_peek_buried($fp)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, 'peek-buried');
     return _beanstalk_peek_read($fp);
-}/*}}}*/
+}
 
 function _beanstalk_kick($fp, $bound)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('kick %d', $bound));
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
@@ -304,10 +304,10 @@ function _beanstalk_kick($fp, $bound)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_kick_job($fp, $id)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('kick-job %d', $id));
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
@@ -319,10 +319,10 @@ function _beanstalk_kick_job($fp, $id)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_stats_read($fp)
-{/*{{{*/
+{
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
     switch ($status) {
@@ -332,17 +332,17 @@ function _beanstalk_stats_read($fp)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_stats($fp)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, 'stats');
     return _beanstalk_stats_read($fp);
-}/*}}}*/
+}
 
 // $array_result 为 true 时解析 YAML 为关联数组
 function _beanstalk_stats_job($fp, $id, $array_result = false)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('stats-job %d', $id));
 
     $res = _beanstalk_stats_read($fp);
@@ -363,22 +363,22 @@ function _beanstalk_stats_job($fp, $id, $array_result = false)
     }
 
     return $res;
-}/*}}}*/
+}
 
 function _beanstalk_stats_tube($fp, $tube)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, sprintf('stats-tube %s', $tube));
     return _beanstalk_stats_read($fp);
-}/*}}}*/
+}
 
 function _beanstalk_list_tube($fp)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, 'list-tubes');
     return _beanstalk_stats_read($fp);
-}/*}}}*/
+}
 
 function _beanstalk_list_tube_used($fp)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, 'list-tube-used');
     $status = strtok(_beanstalk_connection_read($fp), ' ');
 
@@ -389,16 +389,16 @@ function _beanstalk_list_tube_used($fp)
             _beanstalk_error($status);
             return false;
     }
-}/*}}}*/
+}
 
 function _beanstalk_list_tube_watched($fp)
-{/*{{{*/
+{
     _beanstalk_connection_write($fp, 'list-tubes-watched');
     return _beanstalk_stats_read($fp);
-}/*}}}*/
+}
 
 function _queue_last_reserved_job_id(?int $id = null)
-{/*{{{*/
+{
     static $container = null;
 
     if (! is_null($id)) {
@@ -406,10 +406,10 @@ function _queue_last_reserved_job_id(?int $id = null)
     }
 
     return $container;
-}/*}}}*/
+}
 
 function _queue_last_watched_config_key(?string $config_key = null)
-{/*{{{*/
+{
     static $container = null;
 
     if (! is_null($config_key)) {
@@ -417,11 +417,11 @@ function _queue_last_watched_config_key(?string $config_key = null)
     }
 
     return $container;
-}/*}}}*/
+}
 
 // 每次 worker 循环 reserve 前触发，通常用于连接资源回收（如 cache_close、db_close）
 function queue_finish_action(?closure $action = null)
-{/*{{{*/
+{
     static $container = null;
 
     if (!empty($action)) {
@@ -429,26 +429,26 @@ function queue_finish_action(?closure $action = null)
     }
 
     return $container;
-}/*}}}*/
+}
 
 function queue_finish_action_trigger()
-{/*{{{*/
+{
     $finished_action = queue_finish_action();
 
     if ($finished_action instanceof closure) {
         call_user_func($finished_action);
     }
-}/*}}}*/
+}
 
 function queue_job_pickup($job_name)
-{/*{{{*/
+{
     $jobs = queue_jobs();
 
     return $jobs[$job_name];
-}/*}}}*/
+}
 
 function queue_jobs(?array $jobs = null)
-{/*{{{*/
+{
     static $container = [];
 
     if (is_null($jobs)) {
@@ -456,11 +456,11 @@ function queue_jobs(?array $jobs = null)
     }
 
     return $container = $jobs;
-}/*}}}*/
+}
 
 // retry 为延时秒数数组，按 releases 次数匹配对应延迟，超出则 bury
 function queue_job($job_name, closure $closure, $priority = 10, $retry = [], $tube = 'default', $config_key = 'default')
-{/*{{{*/
+{
     $jobs = queue_jobs();
 
     $jobs[$job_name] = [
@@ -472,11 +472,11 @@ function queue_job($job_name, closure $closure, $priority = 10, $retry = [], $tu
     ];
 
     queue_jobs($jobs);
-}/*}}}*/
+}
 
 // 序列化 job_name + data 后 put 到对应 tube
 function queue_push($job_name, array $data = [], $delay = 0)
-{/*{{{*/
+{
     $job = queue_job_pickup($job_name);
 
     $fp = _beanstalk_connection($job['config_key']);
@@ -495,18 +495,18 @@ function queue_push($job_name, array $data = [], $delay = 0)
     );
 
     return $id;
-}/*}}}*/
+}
 
 function queue_pause($tube = 'default', $config_key = 'default', $delay = 3600)
-{/*{{{*/
+{
     $fp = _beanstalk_connection($config_key);
 
     _beanstalk_pause_tube($fp, $tube, $delay);
-}/*}}}*/
+}
 
 // 无限循环 reserve + 执行，支持 SIGTERM 优雅退出和内存上限保护
 function queue_watch($tube = 'default', $config_key = 'default', $memory_limit = 1048576)
-{/*{{{*/
+{
     $out_of_run_time_deleted_job_ids = [];
 
     declare(ticks=1);
@@ -590,19 +590,19 @@ function queue_watch($tube = 'default', $config_key = 'default', $memory_limit =
             }
         }
     }
-}/*}}}*/
+}
 
 function queue_status($tube = 'default', $config_key = 'default')
-{/*{{{*/
+{
     $fp = _beanstalk_connection($config_key);
 
     return _beanstalk_stats_tube($fp, $tube);
-}/*}}}*/
+}
 
 // 在 job closure 中调用，延长当前任务的 TTR（Time To Run），
 // 防止 Beanstalkd 因任务执行超时而将其重新置为 ready 状态
 function queue_job_touch()
-{/*{{{*/
+{
     $config_key = _queue_last_watched_config_key();
 
     if ($config_key) {
@@ -616,4 +616,4 @@ function queue_job_touch()
             return _beanstalk_touch($fp, $job_id);
         }
     }
-}/*}}}*/
+}

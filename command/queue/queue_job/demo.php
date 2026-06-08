@@ -1,6 +1,6 @@
 <?php
 
-queue_job('demo', function () {/*{{{*/
+queue_job('demo', function () {
 
     sleep(1);
 
@@ -8,4 +8,4 @@ queue_job('demo', function () {/*{{{*/
 
     return true;
 
-}, 10, [1, 1, 1], 'default');/*}}}*/
+}, 10, [1, 1, 1], 'default');

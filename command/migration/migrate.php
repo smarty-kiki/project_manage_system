@@ -9,14 +9,14 @@ define('MIGRATION_TABLE', 'migrations');
 define('MIGRATION_SQL_SHIFT_STRING', '    ');
 
 function _migration_files()
-{/*{{{*/
+{
     $files = scandir(MIGRATION_DIR);
 
     return array_diff($files, ['.', '..', '.gitkeep', MIGRATION_TMP_DIR_NAME, MIGRATION_MERGED_DIR_NAME]);
-}/*}}}*/
+}
 
 function _migration_tmp_files()
-{/*{{{*/
+{
     $files = scandir(MIGRATION_TMP_DIR);
 
     $files = array_diff($files, ['.', '..', '.gitkeep']);
@@ -24,20 +24,20 @@ function _migration_tmp_files()
     return array_map(function ($path) {
         return MIGRATION_TMP_DIR_NAME.'/'.$path;
     }, $files);
-}/*}}}*/
+}
 
 function migration_file_path($name)
-{/*{{{*/
+{
     return MIGRATION_DIR.'/'.date('Y_m_d_H_i_s_').$name.'.sql';
-}/*}}}*/
+}
 
 function migration_tmp_file_path($name)
-{/*{{{*/
+{
     return MIGRATION_TMP_DIR.'/'.date('Y_m_d_H_i_s_').$name.'.sql';
-}/*}}}*/
+}
 
 function _migration_file_explode($filepath)
-{/*{{{*/
+{
     $ups = $downs = [];
     if (ends_with($filepath, '.sql')) {
         $content = file_get_contents($filepath);
@@ -52,10 +52,10 @@ function _migration_file_explode($filepath)
     }
 
     return [$ups, $downs];
-}/*}}}*/
+}
 
 function _migration_file_implode($ups, $downs, $filepath)
-{/*{{{*/
+{
     $string = "# up\n";
 
     if ($ups) {
@@ -73,10 +73,10 @@ function _migration_file_implode($ups, $downs, $filepath)
     }
 
     file_put_contents($filepath, $string);
-}/*}}}*/
+}
 
 function _migration_run($files)
-{/*{{{*/
+{
     $old_migrations = db_query_column('migration', 'select * from '.MIGRATION_TABLE, [], 'migrate');
     $new_migrations = array_diff($files, $old_migrations);
     $lost_migrations = array_diff($old_migrations, $files);
@@ -134,10 +134,10 @@ function _migration_run($files)
 
         echo "migrate $filepath success up!\n";
     }
-}/*}}}*/
+}
 
 function _migration_reset()
-{/*{{{*/
+{
     $migrations = db_query_column('migration', 'select migration from '.MIGRATION_TABLE.' order by id desc', [], 'migrate');
 
     foreach ($migrations as $filename) {
@@ -160,10 +160,10 @@ function _migration_reset()
     }
 
     db_delete('delete from '.MIGRATION_TABLE, [], 'migrate');
-}/*}}}*/
+}
 
 function _migration_db_detail()
-{/*{{{*/
+{
     $detail = [
         'table' => [],
         'field' => [],
@@ -209,10 +209,10 @@ function _migration_db_detail()
     } else {
         return false;
     }
-}/*}}}*/
+}
 
 function _migration_detail_diff_to_sql($new, $old)
-{/*{{{*/
+{
     $sqls = [];
 
     $field_sql_string = function ($field, $table) {
@@ -401,10 +401,10 @@ function _migration_detail_diff_to_sql($new, $old)
     }
 
     return $sqls;
-}/*}}}*/
+}
 
 command('migrate:install', '初始化 migrate 所需的表结构', function ()
-{/*{{{*/
+{
     db_structure(
         'create table if not exists `'.MIGRATION_TABLE.'` (
             `id` int(10) unsigned not null auto_increment,
@@ -412,15 +412,15 @@ command('migrate:install', '初始化 migrate 所需的表结构', function ()
             `batch` int(11) not null,
             primary key (`id`)
         ) engine=innodb default charset=utf8 collate=utf8_unicode_ci', 'migrate');
-});/*}}}*/
+});
 
 command('migrate:uninstall', '删除 migrate 所需的表结构', function ()
-{/*{{{*/
+{
     db_structure('drop table `'.MIGRATION_TABLE.'`', 'migrate');
-});/*}}}*/
+});
 
 command('migrate', '执行 migrate', function ()
-{/*{{{*/
+{
     $is_tmp_files = command_paramater('tmp_files', false);
     $with_tmp_files = command_paramater('with_tmp_files', false);
 
@@ -437,10 +437,10 @@ command('migrate', '执行 migrate', function ()
     }
 
     _migration_run($files);
-});/*}}}*/
+});
 
 command('migrate:dry-run', '展示将要跑的 sql', function ()
-{/*{{{*/
+{
     $is_tmp_files = command_paramater('tmp_files', false);
 
     $files = $is_tmp_files ? _migration_tmp_files(): _migration_files();
@@ -459,10 +459,10 @@ command('migrate:dry-run', '展示将要跑的 sql', function ()
         }
     }
 
-});/*}}}*/
+});
 
 command('migrate:rollback', '回滚最后一次 migrate', function ()
-{/*{{{*/
+{
     $last_batch = db_query_value('max_batch', 'select max(batch) max_batch from '.MIGRATION_TABLE, [], 'migrate');
     $last_batch_migrations = db_query_column('migration', 'select migration from '.MIGRATION_TABLE.' where batch = :batch order by id desc', [
         ':batch' => $last_batch,
@@ -489,10 +489,10 @@ command('migrate:rollback', '回滚最后一次 migrate', function ()
     db_delete('delete from '.MIGRATION_TABLE.' where batch = :batch', [
         ':batch' => $last_batch,
     ], 'migrate');
-});/*}}}*/
+});
 
 command('migrate:make', '新建 migration', function ()
-{/*{{{*/
+{
     $name = command_paramater('name');
 
     _migration_run(_migration_files());
@@ -527,10 +527,10 @@ command('migrate:make', '新建 migration', function ()
 
         _migration_run(_migration_files());
     }
-});/*}}}*/
+});
 
 command('migrate:make-merge', '新建 migration merge', function ()
-{/*{{{*/
+{
     _migration_reset();
     $old_db_detail = _migration_db_detail();
 
@@ -571,15 +571,15 @@ command('migrate:make-merge', '新建 migration merge', function ()
     } else {
         echo "\033[31mno merge!\n\033[0m";
     }
-});/*}}}*/
+});
 
 command('migrate:reset', '回滚所有 migrate', function ()
-{/*{{{*/
+{
     _migration_reset();
-});/*}}}*/
+});
 
 command('migrate:generate-diff', '生成 tmp migration 与正式 migration 的差别变更', function ()
-{/*{{{*/
+{
     _migration_reset();
     _migration_run(_migration_files());
     $old_db_detail = _migration_db_detail();
@@ -605,4 +605,4 @@ command('migrate:generate-diff', '生成 tmp migration 与正式 migration 的�
         _migration_reset();
         _migration_run(_migration_files());
     }
-});/*}}}*/
+});

@@ -3,7 +3,7 @@
 define('BLADE_STREAM_SCHEMA', 'blade');
 
 class blade_stream
-{/*{{{*/
+{
     public $context;
     private $string;
     private $position;
@@ -12,77 +12,77 @@ class blade_stream
     private static $streams = [];
 
     public static function stream_write($path, $template)
-    {/*{{{*/
+    {
         return self::$streams[$path] = $template;
-    }/*}}}*/
+    }
 
     public static function has_stream($path)
-    {/*{{{*/
+    {
         return isset(self::$streams[$path]);
-    }/*}}}*/
+    }
 
     public static function generate_stream_path($view)
-    {/*{{{*/
+    {
         return BLADE_STREAM_SCHEMA.'://'.$view;
-    }/*}}}*/
+    }
 
     public function stream_open($path, $mode, $options, &$opened_path)
-    {/*{{{*/
+    {
         $url_info = parse_url($path);
         $path = $url_info["host"].($url_info['path'] ?? '');
 
         $this->string = self::$streams[$path];
         $this->position = 0;
         return true;
-    }/*}}}*/
+    }
 
     public function stream_read($count)
-    {/*{{{*/
+    {
         $ret = substr($this->string, $this->position, $count);
 
         $this->position += strlen($ret);
 
         return $ret;
-    }/*}}}*/
+    }
 
     public function stream_eof()
-    {/*{{{*/
-    }/*}}}*/
+    {
+    }
 
     public function stream_stat()
-    {/*{{{*/
-    }/*}}}*/
+    {
+    }
 
     public function stream_set_option($option, $arg1, $arg2)
-    {/*{{{*/
+    {
         $this->options[$option] = [
             'arg1' => $arg1,
             'arg2' => $arg2,
         ];
 
         return true;
-    }/*}}}*/
-}/*}}}*/
+    }
+}
 
 stream_wrapper_register(BLADE_STREAM_SCHEMA, "blade_stream");
 
 function _blade_regular($compiler)
-{/*{{{*/
+{
     return '/(?<!\w)(\s*)@'.$compiler.'(\s*\(.*\))/';
-}/*}}}*/
+}
 
 function _blade_brace_regular($compiler)
-{/*{{{*/
+{
     return '/(?<!\w)(\s*)@'.$compiler.'\((\s*.*)\)/';
-}/*}}}*/
+}
 
 function _blade_plain_regular($compiler)
-{/*{{{*/
+{
     return '/(?<!\w)(\s*)@'.$compiler.'(\s*)/';
-}/*}}}*/
+}
 
 function _blade_compile_includes($value)
-{/*{{{*/
+{
     $pattern = _blade_brace_regular('include');
 
     $res = preg_match_all($pattern, $value, $matches);
@@ -99,20 +99,20 @@ function _blade_compile_includes($value)
     }
 
     return $value;
-}/*}}}*/
+}
 
 function _blade_compile_comments($value)
-{/*{{{*/
+{
     return preg_replace('/{{--((.|\s)*?)--}}/', '<?php /*$1*/ ?>', $value);
-}/*}}}*/
+}
 
 function _blade_compile_php_code($value)
-{/*{{{*/
+{
     return preg_replace('/@php((.|\s)*?)@endphp/', '<?php $1 ?>', $value);
-}/*}}}*/
+}
 
 function _blade_compile_escaped_echos($value)
-{/*{{{*/
+{
     $pattern = '/{{{\s*(.+?)\s*}}}/s';
 
     $callback = function($matches)
@@ -121,10 +121,10 @@ function _blade_compile_escaped_echos($value)
     };
 
     return preg_replace_callback($pattern, $callback, $value);
-}/*}}}*/
+}
 
 function _blade_compile_echos($value)
-{/*{{{*/
+{
     $pattern = '/(@)?{{\s*(.+?)\s*}}/s';
 
     $callback = function($matches)
@@ -133,45 +133,45 @@ function _blade_compile_echos($value)
     };
 
     return preg_replace_callback($pattern, $callback, $value);
-}/*}}}*/
+}
 
 function _blade_compile_openings($value)
-{/*{{{*/
+{
     $pattern = '/(?(R)\((?:[^\(\)]|(?R))*\)|(?<!\w)(\s*)@(if|elseif|foreach|for|while)(\s*(?R)+))/';
 
     return preg_replace($pattern, '$1<?php $2$3: ?>', $value);
-}/*}}}*/
+}
 
 function _blade_compile_closings($value)
-{/*{{{*/
+{
     $pattern = '/(\s*)@(endif|endforeach|endfor|endwhile)(\s*)/';
 
     return preg_replace($pattern, '$1<?php $2; ?>$3', $value);
-}/*}}}*/
+}
 
 function _blade_compile_else($value)
-{/*{{{*/
+{
     $pattern = _blade_plain_regular('else');
 
     return preg_replace($pattern, '$1<?php else: ?>$2', $value);
-}/*}}}*/
+}
 
 function _blade_compile_unless($value)
-{/*{{{*/
+{
     $pattern = _blade_regular('unless');
 
     return preg_replace($pattern, '$1<?php if ( !$2): ?>', $value);
-}/*}}}*/
+}
 
 function _blade_compile_endunless($value)
-{/*{{{*/
+{
     $pattern = _blade_plain_regular('endunless');
 
     return preg_replace($pattern, '$1<?php endif; ?>$2', $value);
-}/*}}}*/
+}
 
 function blade($template)
-{/*{{{*/
+{
     static $compilers = array(
         'includes',
         'comments',
@@ -191,10 +191,10 @@ function blade($template)
     }
 
     return $template;
-}/*}}}*/
+}
 
 function blade_eval($template, $args = [])
-{/*{{{*/
+{
     $path = uniqid('template_', true);
 
     blade_stream::stream_write($path, blade($template));
@@ -213,11 +213,11 @@ function blade_eval($template, $args = [])
     }
 
     return $echo;
-}/*}}}*/
+}
 
 // 缓存开启时写入 compiled_path，关闭时使用 stream wrapper
 function blade_view_compiler($view)
-{/*{{{*/
+{
     $config = config('blade');
 
     $view_path = view_path();
@@ -248,12 +248,12 @@ function blade_view_compiler($view)
 
         return blade_stream::generate_stream_path($view);
     }
-}/*}}}*/
+}
 
 function blade_view_compiler_generate()
-{/*{{{*/
+{
     return function ($view) {
 
         return blade_view_compiler($view);
     };
-}/*}}}*/
+}

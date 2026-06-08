@@ -2,7 +2,7 @@
 
 // PDO 连接池，基于 DSN+用户名+密码 复用，支持 TCP 端口和 Unix Socket
 function _mysql_connection(array $config)
-{/*{{{*/
+{
     static $container = [];
 
     if (empty($config)) {
@@ -38,11 +38,11 @@ function _mysql_connection(array $config)
 
         return $container[$identifier];
     }
-}/*}}}*/
+}
 
 // type 为 read/write/schema，事务期间自动强制走写库
 function _mysql_database_closure($config_key, $type, closure $closure)
-{/*{{{*/
+{
     $config = config_midware('mysql', $config_key);
 
     $type = db_force_type_write()? 'write': $type;
@@ -59,11 +59,11 @@ function _mysql_database_closure($config_key, $type, closure $closure)
     ]);
 
     return call_user_func($closure, $connection);
-}/*}}}*/
+}
 
 // binds 中的数组值自动展开为 IN 子句占位符
 function _mysql_sql_binds($sql_template, array $binds)
-{/*{{{*/
+{
     $res_binds = [];
 
     foreach ($binds as $key => $value) {
@@ -81,10 +81,10 @@ function _mysql_sql_binds($sql_template, array $binds)
     }
 
     return [$sql_template, $res_binds];
-}/*}}}*/
+}
 
 function db_force_type_write(?bool $bool = null)
-{/*{{{*/
+{
     static $container = false;
 
     if (! is_null($bool)) {
@@ -92,10 +92,10 @@ function db_force_type_write(?bool $bool = null)
     }
 
     return $container;
-}/*}}}*/
+}
 
 function db_query($sql_template, array $binds = [], $config_key = 'default')
-{/*{{{*/
+{
     list($sql_template, $binds) = _mysql_sql_binds($sql_template, $binds);
 
     return _mysql_database_closure($config_key, 'read', function ($connection) use ($sql_template, $binds) {
@@ -106,11 +106,11 @@ function db_query($sql_template, array $binds = [], $config_key = 'default')
 
         return $st->fetchAll(PDO::FETCH_ASSOC);
     });
-}/*}}}*/
+}
 
 // 自动追加 limit 1，未找到返回 false
 function db_query_first($sql_template, array $binds = [], $config_key = 'default')
-{/*{{{*/
+{
     $sql_template = str_finish($sql_template, ' limit 1');
 
     list($sql_template, $binds) = _mysql_sql_binds($sql_template, $binds);
@@ -123,10 +123,10 @@ function db_query_first($sql_template, array $binds = [], $config_key = 'default
 
         return $st->fetch(PDO::FETCH_ASSOC);
     });
-}/*}}}*/
+}
 
 function db_query_column($column, $sql_template, array $binds = [], $config_key = 'default')
-{/*{{{*/
+{
     $rows = db_query($sql_template, $binds, $config_key);
 
     $res = [];
@@ -136,17 +136,17 @@ function db_query_column($column, $sql_template, array $binds = [], $config_key 
     }
 
     return $res;
-}/*}}}*/
+}
 
 function db_query_value($value, $sql_template, array $binds = [], $config_key = 'default')
-{/*{{{*/
+{
     $row = db_query_first($sql_template, $binds, $config_key);
 
     return $row[$value] ?? null;
-}/*}}}*/
+}
 
 function db_update($sql_template, array $binds = [], $config_key = 'default')
-{/*{{{*/
+{
     list($sql_template, $binds) = _mysql_sql_binds($sql_template, $binds);
 
     return _mysql_database_closure($config_key, 'write', function ($connection) use ($sql_template, $binds) {
@@ -157,10 +157,10 @@ function db_update($sql_template, array $binds = [], $config_key = 'default')
 
         return $st->rowCount();
     });
-}/*}}}*/
+}
 
 function db_delete($sql_template, array $binds = [], $config_key = 'default')
-{/*{{{*/
+{
     list($sql_template, $binds) = _mysql_sql_binds($sql_template, $binds);
 
     return _mysql_database_closure($config_key, 'write', function ($connection) use ($sql_template, $binds) {
@@ -171,10 +171,10 @@ function db_delete($sql_template, array $binds = [], $config_key = 'default')
 
         return $st->rowCount();
     });
-}/*}}}*/
+}
 
 function db_insert($sql_template, array $binds = [], $config_key = 'default')
-{/*{{{*/
+{
     list($sql_template, $binds) = _mysql_sql_binds($sql_template, $binds);
 
     return _mysql_database_closure($config_key, 'write', function ($connection) use ($sql_template, $binds) {
@@ -185,10 +185,10 @@ function db_insert($sql_template, array $binds = [], $config_key = 'default')
 
         return $connection->lastInsertId();
     });
-}/*}}}*/
+}
 
 function db_write($sql_template, array $binds = [], $config_key = 'default')
-{/*{{{*/
+{
     list($sql_template, $binds) = _mysql_sql_binds($sql_template, $binds);
 
     return _mysql_database_closure($config_key, 'write', function ($connection) use ($sql_template, $binds) {
@@ -199,11 +199,11 @@ function db_write($sql_template, array $binds = [], $config_key = 'default')
 
         return $st->rowCount();
     });
-}/*}}}*/
+}
 
 // 使用 schema 连接，不走读写分离
 function db_structure($sql, $config_key = 'default')
-{/*{{{*/
+{
     return _mysql_database_closure($config_key, 'schema', function ($connection) use ($sql) {
 
         $st = $connection->prepare($sql);
@@ -212,11 +212,11 @@ function db_structure($sql, $config_key = 'default')
 
         return $st->rowCount();
     });
-}/*}}}*/
+}
 
 // 事务内强制走写库，异常回滚，finally 恢复
 function db_transaction(closure $action, $config_key = 'default')
-{/*{{{*/
+{
     db_force_type_write(true);
 
     return _mysql_database_closure($config_key, 'write', function ($connection) use ($action) {
@@ -241,16 +241,16 @@ function db_transaction(closure $action, $config_key = 'default')
             db_force_type_write(false);
         }
     });
-}/*}}}*/
+}
 
 function db_close()
-{/*{{{*/
+{
     return _mysql_connection([]);
-}/*}}}*/
+}
 
 // value 类型决定 SQL 逻辑：数组→IN，null→IS NULL，字符串→=；列名后空格加 not 可反转
 function db_simple_where_sql(array $wheres)
-{/*{{{*/
+{
     if (empty($wheres)) {
         return ['1 = 1', []];
     }
@@ -288,10 +288,10 @@ function db_simple_where_sql(array $wheres)
     }
 
     return [implode(' and ', $where_sqls), $binds];
-}/*}}}*/
+}
 
 function db_simple_insert($table, array $data, $config_key = 'default')
-{/*{{{*/
+{
     $columns = $values = $binds = [];
 
     foreach ($data as $column => $value) {
@@ -303,11 +303,11 @@ function db_simple_insert($table, array $data, $config_key = 'default')
     $sql_template = 'insert into `'.$table.'` (`'.implode('`, `', $columns).'`) values ('.implode(', ', $values).')';
 
     return db_insert($sql_template, $binds, $config_key);
-}/*}}}*/
+}
 
 // 自动合并列名生成单条 INSERT 多值语句
 function db_simple_multi_insert($table, array $datas, $config_key = 'default')
-{/*{{{*/
+{
     $data_sql_templates = $columns = $binds = [];
 
     foreach ($datas as $k => $data) {
@@ -326,10 +326,10 @@ function db_simple_multi_insert($table, array $datas, $config_key = 'default')
     $sql_template = 'insert into `'.$table.'` (`'.implode('`, `', array_keys($columns)).'`) values '.implode(', ', $data_sql_templates);
 
     return db_insert($sql_template, $binds, $config_key);
-}/*}}}*/
+}
 
 function db_simple_update($table, array $wheres, array $data, $config_key = 'default')
-{/*{{{*/
+{
     list($where, $binds) = db_simple_where_sql($wheres);
 
     $update = [];
@@ -342,11 +342,11 @@ function db_simple_update($table, array $wheres, array $data, $config_key = 'def
     $sql_template = 'update `'.$table.'` set '.implode(', ', $update).' where '.$where;
 
     return db_update($sql_template, $binds, $config_key);
-}/*}}}*/
+}
 
 // 使用 CASE WHEN 在一条 SQL 中更新多行不同值
 function db_simple_multi_update($table, array $datas, $where_column = 'id', $config_key = 'default')
-{/*{{{*/
+{
     $set_sqls = $binds = $where_values = [];
 
     $keys = array_keys(current($datas));
@@ -381,34 +381,34 @@ function db_simple_multi_update($table, array $datas, $where_column = 'id', $con
         "update `$table` set\n$set_sql_str where `$where_column` in :where_values",
         $binds,
         $config_key);
-}/*}}}*/
+}
 
 function db_simple_delete($table, array $wheres, $config_key = 'default')
-{/*{{{*/
+{
     list($where, $binds) = db_simple_where_sql($wheres);
 
     $sql_template = 'delete from `'.$table.'` where '.$where;
 
     return db_delete($sql_template, $binds, $config_key);
-}/*}}}*/
+}
 
 // option_sql 可追加 order by / limit 等
 function db_simple_query($table, array $wheres = [], $option_sql = 'order by id', $config_key = 'default')
-{/*{{{*/
+{
     list($where, $binds) = db_simple_where_sql($wheres);
 
     return db_query('select * from `'.$table.'` where '.$where.' '.$option_sql, $binds, $config_key);
-}/*}}}*/
+}
 
 function db_simple_query_first($table, array $wheres, $option_sql = '', $config_key = 'default')
-{/*{{{*/
+{
     list($where, $binds) = db_simple_where_sql($wheres);
 
     return db_query_first('select * from `'.$table.'` where '.$where.' '.$option_sql, $binds, $config_key);
-}/*}}}*/
+}
 
 function db_simple_query_column($table, $column, array $wheres = [], $option_sql = '', $config_key = 'default')
-{/*{{{*/
+{
     $datas = db_simple_query($table, $wheres, $option_sql, $config_key);
 
     $res = [];
@@ -418,11 +418,11 @@ function db_simple_query_column($table, $column, array $wheres = [], $option_sql
     }
 
     return $res;
-}/*}}}*/
+}
 
 // 以 indexed 列的值作为返回数组的 key
 function db_simple_query_indexed($table, $indexed, array $wheres = [], $option_sql = 'order by id', $config_key = 'default')
-{/*{{{*/
+{
     $datas = db_simple_query($table, $wheres, $option_sql, $config_key);
 
     $res = [];
@@ -432,11 +432,11 @@ function db_simple_query_indexed($table, $indexed, array $wheres = [], $option_s
     }
 
     return $res;
-}/*}}}*/
+}
 
 function db_simple_query_value($table, $value, array $wheres, $option_sql = '', $config_key = 'default')
-{/*{{{*/
+{
     list($where, $binds) = db_simple_where_sql($wheres);
 
     return db_query_value($value, "select `$value` from `$table` where $where $option_sql", $binds, $config_key);
-}/*}}}*/
+}

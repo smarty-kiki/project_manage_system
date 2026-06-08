@@ -2,7 +2,7 @@
 
 // 连接池复用，支持 TCP 和 Unix Socket
 function _redis_connection(array $config)
-{/*{{{*/
+{
     static $container = [];
 
     if (empty($config)) {
@@ -51,39 +51,39 @@ function _redis_connection(array $config)
 
         return $redis;
     }
-}/*}}}*/
+}
 
 function _redis_cache_closure($config_key, closure $closure)
-{/*{{{*/
+{
     $config = config_midware('redis', $config_key);
 
     $redis = _redis_connection($config);
 
     return call_user_func($closure, $redis);
-}/*}}}*/
+}
 
 function cache_get($key, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key) {
 
         return $redis->get($key);
 
     });
-}/*}}}*/
+}
 
 // 返回 key => value 关联数组，不存在的 key 值为 false
 function cache_multi_get(array $keys, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($keys) {
 
         $values = $redis->mGet($keys);
 
         return array_combine($keys, $values);
     });
-}/*}}}*/
+}
 
 function cache_set($key, $value, $expires = 0, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $value, $expires) {
 
         if ($expires) {
@@ -92,11 +92,11 @@ function cache_set($key, $value, $expires = 0, $config_key = 'default')
             return $redis->set($key, $value);
         }
     });
-}/*}}}*/
+}
 
 // NX — key 不存在时才设置
 function cache_add($key, $value, $expires = 0, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $value, $expires) {
 
         if ($expires) {
@@ -105,11 +105,11 @@ function cache_add($key, $value, $expires = 0, $config_key = 'default')
             return $redis->setNx($key, $value);
         }
     });
-}/*}}}*/
+}
 
 // XX — key 存在时才替换
 function cache_replace($key, $value, $expires = 0, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $value, $expires) {
 
         if ($expires) {
@@ -118,26 +118,26 @@ function cache_replace($key, $value, $expires = 0, $config_key = 'default')
             return $redis->setNx($key, $value);
         }
     });
-}/*}}}*/
+}
 
 function cache_delete($key, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key) {
 
         return $redis->del($key);
     });
-}/*}}}*/
+}
 
 function cache_multi_delete(array $keys, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($keys) {
 
         return $redis->del($keys);
     });
-}/*}}}*/
+}
 
 function cache_increment($key, $number = 1, $expires = 0, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $number, $expires) {
 
         $res = $redis->incr($key, $number);
@@ -148,10 +148,10 @@ function cache_increment($key, $number = 1, $expires = 0, $config_key = 'default
 
         return $res;
     });
-}/*}}}*/
+}
 
 function cache_decrement($key, $number = 1, $expires = 0, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $number, $expires) {
 
         $res = $redis->decr($key, $number);
@@ -162,19 +162,19 @@ function cache_decrement($key, $number = 1, $expires = 0, $config_key = 'default
 
         return $res;
     });
-}/*}}}*/
+}
 
 // 生产环境慎用
 function cache_keys($pattern = '*', $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($pattern) {
 
         return $redis->keys($pattern);
     });
-}/*}}}*/
+}
 
 function cache_hmset($key, array $array, $expires = 0, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $array, $expires) {
 
         $res = $redis->hmset($key, $array);
@@ -185,19 +185,19 @@ function cache_hmset($key, array $array, $expires = 0, $config_key = 'default')
 
         return $res;
     });
-}/*}}}*/
+}
 
 function cache_hmget($key, array $fields, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $fields) {
 
         return $redis->hmget($key, $fields);
 
     });
-}/*}}}*/
+}
 
 function cache_lpush($key, $values, $expires = 0, $config_key = 'default')
-{/*{{{*/
+{
     $values = (array) $values;
 
     return _redis_cache_closure($config_key, function ($redis) use ($key, $values, $expires) {
@@ -210,11 +210,11 @@ function cache_lpush($key, $values, $expires = 0, $config_key = 'default')
 
         return $res;
     });
-}/*}}}*/
+}
 
 // wait_time=0 时永久阻塞
 function cache_blpop($keys, $wait_time = 0, $config_key = 'default')
-{/*{{{*/
+{
     $is_array = is_array($keys);
 
     $params = (array) $keys;
@@ -231,62 +231,62 @@ function cache_blpop($keys, $wait_time = 0, $config_key = 'default')
     } else {
         return $is_array? []: null;
     }
-}/*}}}*/
+}
 
 function cache_setbit($key, $offset, $value, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $offset, $value) {
 
         return $redis->setbit($key, $offset, $value);
     });
-}/*}}}*/
+}
 
 function cache_getbit($key, $offset, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $offset) {
 
         return $redis->getbit($key, $offset);
     });
-}/*}}}*/
+}
 
 // start/end 为字节偏移（非位偏移），-1 表示末尾
 function cache_bitcount($key, $start = 0, $end = -1, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $start, $end) {
 
         return $redis->bitcount($key, $start, $end);
     });
-}/*}}}*/
+}
 
 // operation: AND/OR/XOR/NOT
 function cache_bitop($destkey, $operation, $keys, $config_key = 'default')
-{/*{{{*/
+{
     $keys = (array) $keys;
 
     return _redis_cache_closure($config_key, function ($redis) use ($destkey, $operation, $keys) {
 
         return $redis->bitop($operation, $destkey, ...$keys);
     });
-}/*}}}*/
+}
 
 // 查找指定 bit 值首次出现的位偏移，start/end 为字节偏移
 function cache_bitpos($key, $bit, $start = 0, $end = -1, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($key, $bit, $start, $end) {
 
         return $redis->bitpos($key, $bit, $start, $end);
     });
-}/*}}}*/
+}
 
 function cache_rename($old_key, $new_key, $config_key = 'default')
-{/*{{{*/
+{
     return _redis_cache_closure($config_key, function ($redis) use ($old_key, $new_key) {
 
         return $redis->rename($old_key, $new_key);
     });
-}/*}}}*/
+}
 
 function cache_close()
-{/*{{{*/
+{
     return _redis_connection([]);
-}/*}}}*/
+}

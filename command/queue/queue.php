@@ -1,7 +1,7 @@
 <?php
 
 command('queue:worker', '启动队列 worker', function ()
-{/*{{{*/
+{
     $tube = command_paramater('tube', 'default');
     $config_key = command_paramater('config_key', 'default');
     $memory_limit = command_paramater('memory_limit', 1048576 * 128);
@@ -16,18 +16,18 @@ command('queue:worker', '启动队列 worker', function ()
     });
 
     queue_watch($tube, $config_key, $memory_limit);
-});/*}}}*/
+});
 
 command('queue:status', '队列状态', function ()
-{/*{{{*/
+{
     $tube = command_paramater('tube', 'default');
     $config_key = command_paramater('config_key', 'default');
 
     echo queue_status($tube, $config_key)."\n";
-});/*}}}*/
+});
 
 command('queue:pause', '暂停队列任务派发', function ()
-{/*{{{*/
+{
     $tube = command_paramater('tube', 'default');
     $config_key = command_paramater('config_key', 'default');
     $delay = command_paramater('delay', 3600);
@@ -35,10 +35,10 @@ command('queue:pause', '暂停队列任务派发', function ()
     queue_pause($tube, $config_key, $delay);
 
     sleep($delay);
-});/*}}}*/
+});
 
 command('queue:peek-buried', '处理 buried 状态的任务', function ()
-{/*{{{*/
+{
     $tube = command_paramater('tube', 'default');
     $config_key = command_paramater('config_key', 'default');
 
@@ -74,10 +74,10 @@ command('queue:peek-buried', '处理 buried 状态的任务', function ()
         }
         echo "\n";
     }
-});/*}}}*/
+});
 
 command('queue:ready-to-buried', '将 ready 状态的任务快速改变为 buried 状态', function ()
-{/*{{{*/
+{
     $tube = command_paramater('tube', 'default');
     $config_key = command_paramater('config_key', 'default');
 
@@ -109,10 +109,10 @@ command('queue:ready-to-buried', '将 ready 状态的任务快速改变为 burie
         echo "job_id: ".$id." job_name: ".$job_name."\n";
     }
 
-});/*}}}*/
+});
 
 command('queue:buried-dump', '将 buried 状态的任务快速导出文件并清理', function ()
-{/*{{{*/
+{
     $tube = command_paramater('tube', 'default');
     $config_key = command_paramater('config_key', 'default');
     $file_path = '/tmp/queue_buried_flush_tube_'.$tube.'_'.time().'.dump';
@@ -151,10 +151,10 @@ command('queue:buried-dump', '将 buried 状态的任务快速导出文件并清
         }
     }
 
-});/*}}}*/
+});
 
 command('queue:dump-import', '将导出的 dump 文件快速导入到队列并进入 ready 状态', function ()
-{/*{{{*/
+{
     $file_path = command_paramater('file_path');
 
     if (is_null($file_path) || false == is_file($file_path)) {
@@ -201,4 +201,4 @@ command('queue:dump-import', '将导出的 dump 文件快速导入到队列并�
         echo "导入错误的任务可在 $error_file_path 中查看\n";
     }
 
-});/*}}}*/
+});

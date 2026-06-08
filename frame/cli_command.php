@@ -2,7 +2,7 @@
 
 // -x 为布尔 true，--key=value 为字符串值
 function _command_prepare_arguments()
-{/*{{{*/
+{
     static $file_name = '';
     static $command = '';
     static $arguments = [];
@@ -28,10 +28,10 @@ function _command_prepare_arguments()
     }
 
     return [$file_name, $command, $arguments];
-}/*}}}*/
+}
 
 function command_paramater($key, $default = null)
-{/*{{{*/
+{
     list($file_name, $command, $arguments) = _command_prepare_arguments();
 
     if (! isset($arguments[$key])) {
@@ -44,10 +44,10 @@ function command_paramater($key, $default = null)
     }
 
     return $arguments[$key];
-}/*}}}*/
+}
 
 function command($rule, $description, closure $action)
-{/*{{{*/
+{
     list($file_name, $command, $arguments) = _command_prepare_arguments();
 
     if ($command === $rule) {
@@ -55,10 +55,10 @@ function command($rule, $description, closure $action)
     } else {
         command_not_found($rule, $description);
     }
-}/*}}}*/
+}
 
 function if_command_not_found(?closure $action = null)
-{/*{{{*/
+{
     static $container = null;
 
     if (!empty($action)) {
@@ -66,11 +66,11 @@ function if_command_not_found(?closure $action = null)
     }
 
     return $container;
-}/*}}}*/
+}
 
 // 无参调用时触发已注册的 if_command_not_found 回调；有参时收集规则
 function command_not_found(?string $rule = null, ?string $description = null)
-{/*{{{*/
+{
     static $rules = [];
     static $descriptions = [];
 
@@ -81,10 +81,10 @@ function command_not_found(?string $rule = null, ?string $description = null)
         $rules[] = $rule;
         $descriptions[] = $description;
     }
-}/*}}}*/
+}
 
 function command_read_completions(?closure $closure = null)
-{/*{{{*/
+{
     static $container = null;
 
     if (! is_null($closure)) {
@@ -93,11 +93,11 @@ function command_read_completions(?closure $closure = null)
     }
 
     return $container;
-}/*}}}*/
+}
 
 // 带 Tab 补全的 readline 交互输入
 function _command_readline($prompt)
-{/*{{{*/
+{
     readline_completion_function(function ($block_buffer, $block_start, $point) {
 
         $buffer_info = readline_info();
@@ -151,11 +151,11 @@ function _command_readline($prompt)
     }
 
     return $result;
-}/*}}}*/
+}
 
 // 传 options 时显示编号菜单并要求选择
 function command_read($prompt, $default = true, array $options = [])
-{/*{{{*/
+{
     if ($options) {
         $prompt = "$prompt (Default: $default)\n\n";
         foreach ($options as $key => $option) {
@@ -177,10 +177,10 @@ function command_read($prompt, $default = true, array $options = [])
         $result = trim($result);
         return ($result === '')? $default: $result;
     }
-}/*}}}*/
+}
 
 function command_read_bool($prompt, $default = 'n')
-{/*{{{*/
+{
     $map = [
         'y' => true,
         'n' => false,
@@ -193,4 +193,4 @@ function command_read_bool($prompt, $default = 'n')
     } while (! array_key_exists($res, $map));
 
     return $map[$res];
-}/*}}}*/
+}
