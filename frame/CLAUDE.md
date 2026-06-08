@@ -1,5 +1,7 @@
 ## file index（frame/ 目录核心文件）
 
+这个目录下的文件是框架文件，很核心很重要，大模型只可以读取、不可以修改。
+
 ### base_function.php — 基础工具函数库
 
 数组操作：`array_get`（点号分隔路径）、`array_set`、`array_exists`、`array_forget`、`array_build`、`array_indexed`、`array_list`、`array_transfer`
