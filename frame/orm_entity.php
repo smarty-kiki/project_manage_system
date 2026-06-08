@@ -1,32 +1,41 @@
 <?php
 
+// 关系变体后缀：每个 has_one/belongs_to/has_many 自动注册带此后缀的变体，查询时包含软删除记录
 define('ENTITY_RELATIONSHIP_DELETED_SUFFIX', '_with_deleted');
 define('ENTITY_STRUCT_VALIDATOR_ERROR_CODE', 'ENTITY_STRUCT_VALIDATOR_ERROR');
 define('ENTITY_DEFAULT_ERROR_CODE', 'ENTITY_DEFAULT_ERROR');
 
+// Active Record 实体基类 — 内置 id/version/create_time/update_time/delete_time 五个系统字段，
+// 通过 structs（数据库快照）与 attributes（内存当前值）对比实现脏检测。
+// 配合 Unit of Work 自动持久化：just_new → INSERT，just_updated → UPDATE + 乐观锁，just_deleted → 软删除。
 abstract class entity implements JsonSerializable, Serializable
 {
     /*{{{*/
     const INIT_VERSION = 0;
 
+    // 五个系统字段由框架管理，子类在 $structs 中只需声明业务字段
     public $id;
     public $version;
     public $create_time;
     public $update_time;
     public $delete_time;
 
+    // 仅当前请求内有效，不会持久化到数据库
     private $just_deleted;
     private $just_force_deleted;
 
-    // structs = 数据库中原始值，attributes = 内存值，不一致则脏
+    // structs = 数据库中原始值，attributes = 内存值，不一致表示有未提交变更
     public $structs = [];
     public $attributes = [];
 
+    // 定义 null_entity 访问属性时的默认返回值，子类静态声明，如 ['status' => 1]
     public static $null_entity_mock_attributes = [];
 
+    // relationships = 已加载的关系数据缓存，relationship_refs = 关系元数据（按需懒加载）
     private $relationships = [];
     private $relationship_refs = [];
 
+    // 子类 create() 调用此入口，version=0 使 just_new() 返回 true，Unit of Work 据此生成 INSERT
     protected static function init()
     {
         $static = new static();
@@ -74,6 +83,7 @@ abstract class entity implements JsonSerializable, Serializable
         return $this->just_deleted;
     }
 
+    // 标记软删除，Unit of Work 提交时生成 UPDATE SET delete_time
     public function delete()
     {
         $this->just_deleted = true;
@@ -91,12 +101,13 @@ abstract class entity implements JsonSerializable, Serializable
         return $this->just_force_deleted;
     }
 
+    // 标记硬删除，Unit of Work 提交时生成 DELETE FROM
     final public function force_delete()
     {
         $this->just_force_deleted = true;
     }
 
-    // null_entity 重写返回 true
+    // null_entity 重写返回 true，正常 entity 永远返回 false
     public function is_null()
     {
         return false;
@@ -162,7 +173,11 @@ abstract class entity implements JsonSerializable, Serializable
         }
     }
 
-    // 优先级：get_{property} → 已加载关系 → 懒加载关系 → attributes
+    // 访问器优先级链：
+    // 1. get_{property}() 方法（子类自定义访问器）
+    // 2. 已加载的关系数据（relationships 缓存，含本次请求刚赋值的）
+    // 3. 懒加载关系（首次访问时通过 relationship_ref 查询并缓存到 relationships）
+    // 4. attributes 中的原始值
     public function __get($property)
     {
         $method = "get_$property";
@@ -182,6 +197,10 @@ abstract class entity implements JsonSerializable, Serializable
         return $this->attributes[$property];
     }
 
+    // 赋值分流：
+    // 1. 如果是关系属性 → 调用 relationship_ref->update() 维护外键，再将值缓存到 relationships
+    // 2. 如果是业务字段 → 直接写入 attributes（structs 保持不变，标记为脏）
+    // 已加载过关系时传入 old_entity，让 update() 可以解除旧关联
     final public function __set($property, $value)
     {
         if (isset($this->relationship_refs[$property])) {
@@ -202,6 +221,7 @@ abstract class entity implements JsonSerializable, Serializable
         }
     }
 
+    // unset 仅允许用于已加载的关系缓存，不支持删除 attributes 中的字段
     final public function __unset($property)
     {
         otherwise(
@@ -223,6 +243,7 @@ abstract class entity implements JsonSerializable, Serializable
             || method_exists($this, $method);
     }
 
+    // 懒加载入口：首次访问关系属性时，通过 relationship_ref 查询并缓存到 relationships
     private function load_relationship_from_ref($relationship_name)
     {
         $relationship_ref = $this->relationship_refs[$relationship_name];
@@ -230,7 +251,7 @@ abstract class entity implements JsonSerializable, Serializable
         return $this->relationships[$relationship_name] = $relationship_ref->load($this);
     }
 
-    // 同时自动注册 _with_deleted 变体
+    // 定义 has_one 关系：子实体通过 foreign_key 指向本实体，同时自动注册 _with_deleted 变体
     protected function has_one($relationship_name, ?string $entity_name = null, ?string $foreign_key = null)
     {
         $self_entity_name = get_class($this);
@@ -247,6 +268,7 @@ abstract class entity implements JsonSerializable, Serializable
         $this->relationship_refs[$relationship_name.ENTITY_RELATIONSHIP_DELETED_SUFFIX] = instance('has_one', [$entity_name, $foreign_key, true]);
     }
 
+    // 定义 belongs_to 关系：foreign_key 默认按实体名推导（如 user → user_id），同时自动注册 _with_deleted 变体
     protected function belongs_to($relationship_name, ?string $entity_name = null, ?string $foreign_key = null)
     {
         if (is_null($entity_name)) {
@@ -261,6 +283,7 @@ abstract class entity implements JsonSerializable, Serializable
         $this->relationship_refs[$relationship_name.ENTITY_RELATIONSHIP_DELETED_SUFFIX] = instance('belongs_to', [$entity_name, $foreign_key, true]);
     }
 
+    // 定义 has_many 关系：foreign_key 默认按当前实体名推导，同时自动注册 _with_deleted 变体
     protected function has_many($relationship_name, ?string $entity_name = null, ?string $foreign_key = null)
     {
         $self_entity_name = get_class($this);
@@ -294,6 +317,8 @@ abstract class entity implements JsonSerializable, Serializable
 
 }/*}}}*/
 
+// 空对象模式：dao 查询无结果时返回此对象，链式访问不报错，避免 NPE。
+// $null_entity_mock_attributes 允许子类声明属性默认值，如 null_entity('user')->status → 1
 class null_entity extends entity
 {
     /*{{{*/
@@ -320,6 +345,7 @@ class null_entity extends entity
         return;
     }
 
+    // 链式 null 传播：$post->creator->name，creator 为 null_entity 时继续返回 null_entity
     public function __get($property)
     {
         $mock_entity_name = $this->mock_entity_name;
@@ -348,9 +374,11 @@ abstract class relationship_ref
     /*{{{*/
     abstract public function load(entity $from_entity);
     abstract public function batch_load(array $from_entity, $relationship_name);
+    // $values: 新赋值的实体/实体数组；$old_value: 旧的关联实体，用于解除旧外键绑定
     abstract public function update($values, entity $from_entity, $old_value);
 }/*}}}*/
 
+// has_one：子实体表含 foreign_key，通过 foreign_key = from_entity.id 查询唯一子实体
 class has_one extends relationship_ref
 {
     /*{{{*/
@@ -372,6 +400,7 @@ class has_one extends relationship_ref
         ]);
     }
 
+    // batch_load：$from_entities 的 key 是实体 id，一次查询后按 foreign_key 回填
     public function batch_load(array $from_entities, $relationship_name)
     {
         $ids = array_keys($from_entities);
@@ -402,6 +431,7 @@ class has_one extends relationship_ref
     }
 }/*}}}*/
 
+// belongs_to：本实体表含 foreign_key，通过 foreign_key 值查询父实体
 class belongs_to extends relationship_ref
 {
     /*{{{*/
@@ -421,6 +451,7 @@ class belongs_to extends relationship_ref
         return dao($this->entity_name, $this->with_deleted)->find_by_id($from_entity->{$this->foreign_key});
     }
 
+    // 跳过 null_entity，因其无合法 foreign_key
     public function batch_load(array $from_entities, $relationship_name)
     {
         $ids_keys = [];
@@ -458,6 +489,7 @@ class belongs_to extends relationship_ref
     }
 }/*}}}*/
 
+// has_many：子实体表含 foreign_key，通过 foreign_key = from_entity.id 查询多条子实体
 class has_many extends relationship_ref
 {
     /*{{{*/
@@ -479,6 +511,7 @@ class has_many extends relationship_ref
         ]);
     }
 
+    // 一次查询出所有子实体，按 foreign_key 分桶后回填
     public function batch_load(array $from_entities, $relationship_name)
     {
         $ids = array_keys($from_entities);
@@ -524,9 +557,11 @@ class has_many extends relationship_ref
 abstract class dao
 {
     /*{{{*/
+    // class_name 由构造函数从类名自动推导（去掉 _dao 后缀）
     protected $class_name;
     protected $table_name;
     protected $db_config_key;
+    // 通过 dao($name, true) 设置，控制查询是否包含软删除记录
     protected $with_deleted;
 
     public function __construct()
@@ -538,6 +573,9 @@ abstract class dao
     {/*{{{*/
         $this->with_deleted = $with_deleted;
     }/*}}}*/
+
+    // 三个方法是软删除过滤的规范入口，仅区别前缀连接词：and / where / where...and。
+    // DAO 子类新增 find_by_xxx / find_all_by_xxx 拼接 SQL 时统一调用这三个方法注入软删除条件，禁止手写 delete_time is null
 
     final protected function with_deleted_and_sql(?string $alias = null)
     {/*{{{*/
@@ -572,6 +610,7 @@ abstract class dao
         }
     }/*}}}*/
 
+    // 本地缓存作为 read-through 缓存：命中直接返回，未命中查库并写入缓存，不存在返回 null_entity 而非 null
     public function find_by_id($id)
     {/*{{{*/
         if (empty($id)) {
@@ -616,6 +655,7 @@ abstract class dao
         return $this->find_by_sql('select * from `'.$this->table_name.'`'.$with_deleted_sql.' '.$condition, $binds);
     }/*}}}*/
 
+    // 单条查询内部基方法：查库并回写本地缓存，不存在返回 null_entity
     protected function find_by_sql($sql_template, array $binds = [])
     {/*{{{*/
         $row = db_query_first($sql_template, $binds, $this->db_config_key);
@@ -635,6 +675,7 @@ abstract class dao
         return $entity;
     }/*}}}*/
 
+    // 按 ID 列表批量查询，用 find_in_set 排序确保返回数组顺序与 $ids 输入顺序一致
     public function find_all_by_ids(array $ids)
     {/*{{{*/
         if (empty($ids)) {
@@ -704,6 +745,7 @@ abstract class dao
         return $this->find_all_by_sql('select * from `'.$this->table_name.'` where '.  $condition, $binds);
     }/*}}}*/
 
+    // 多条查询内部基方法：查库并回写本地缓存，返回数组 key 为实体 id
     protected function find_all_by_sql($sql_template, array $binds = [])
     {/*{{{*/
         $entities = [];
@@ -819,6 +861,7 @@ abstract class dao
         return db_query_value('count', $sql, $binds, $this->db_config_key);
     }/*}}}*/
 
+    // 计算实体脏数据：对比 attributes 与 structs，提取变更列，自动递增 version 并刷新 update_time
     private function get_dirty($entity)
     {/*{{{*/
         $rows = [];
@@ -836,6 +879,7 @@ abstract class dao
         return $rows;
     }/*}}}*/
 
+    // 将数据库行转换为实体：id/version/create_time/update_time/delete_time 提升为对象属性，其余字段存入 structs(=attributes)
     private function row_to_entity($rows)
     {/*{{{*/
         $entity = new $this->class_name();
@@ -862,6 +906,7 @@ abstract class dao
         return $this->db_config_key;
     }/*}}}*/
 
+    // 以下三个 dump_*_sql 方法仅供 Unit of Work 在提交阶段调用，生成待在事务中执行的 SQL
     final public function dump_insert_sql($entity)
     {/*{{{*/
         $columns = $values = $binds = [];
@@ -922,6 +967,7 @@ function dao($class_name, $with_deleted = false)
     return $dao;
 }
 
+// 本地缓存 —— 请求级别的 Identity Map，同一请求内相同实体只从数据库加载一次
 function _local_cache_key($entity_type, $id)
 {
     return $entity_type.'_'.$id;
@@ -1001,6 +1047,7 @@ function local_cache_flush_all()
     return $cached;
 }
 
+// 从请求参数中获取实体（GET/POST），默认参数名为 {entity_name}_id，返回实体或 null_entity
 function input_entity($entity_name, $name = null, $require = false)
 {
     if (is_null($name)) {
@@ -1024,6 +1071,7 @@ function input_entity($entity_name, $name = null, $require = false)
     }
 }
 
+// 链式批量加载关系，如 relationship_batch_load($entities, 'creator.orders') 先加载 creator 再加载 orders
 function relationship_batch_load($entities, $relationship_chain)
 {
     if (empty($entities)) {
