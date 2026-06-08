@@ -182,15 +182,8 @@ abstract class entity implements JsonSerializable, Serializable
         return $this->attributes[$property];
     }
 
-    // 先调 prepare_set_{property} 预处理
     final public function __set($property, $value)
     {
-        $method = "prepare_set_$property";
-
-        if (method_exists($this, $method)) {
-            $value = $this->$method($value);
-        }
-
         if (isset($this->relationship_refs[$property])) {
 
             if (isset($this->relationships[$property])) {
@@ -381,30 +374,31 @@ class has_one extends relationship_ref
 
     public function batch_load(array $from_entities, $relationship_name)
     {
-        $ids = array_pluck($from_entities, 'id');
+        $ids = array_keys($from_entities);
 
-        $entities = dao($this->entity_name, $this->with_deleted)->find_all_by_foreign_key($this->foreign_key, $ids);
+        $entities = dao($this->entity_name, $this->with_deleted)->find_all_by_column([
+            $this->foreign_key => $ids,
+        ]);
 
-        foreach ($from_entities as $k => $from_entity) {
+        foreach ($entities as $entity) {
 
-            $entity = $entities[$from_entity->id] ?? null_entity::create($this->entity_name);
+            $from_entity = $from_entities[$entity->{$this->foreign_key}];
 
-            $from_entity->relationships[$relationship_name] = $entity;
+            $from_entity->{$relationship_name} = $entity;
         }
 
         return $entities;
     }
 
-    public function update($values, entity $from_entity, $old_value = null)
+    public function update($entity, entity $from_entity, $old_entity = null)
     {
-        if ($values instanceof entity) {
-
-            $values->{$this->foreign_key} = $from_entity->id;
-
-            return $values;
+        if ($old_entity instanceof entity) {
+            $old_entity->{$this->foreign_key} = 0;
         }
 
-        return $values;
+        if ($entity instanceof entity) {
+            $entity->{$this->foreign_key} = $from_entity->id;
+        }
     }
 }/*}}}*/
 
@@ -424,40 +418,43 @@ class belongs_to extends relationship_ref
 
     public function load(entity $from_entity)
     {
-        return dao($this->entity_name, $this->with_deleted)->find($from_entity->attributes[$this->foreign_key]);
+        return dao($this->entity_name, $this->with_deleted)->find_by_id($from_entity->{$this->foreign_key});
     }
 
     public function batch_load(array $from_entities, $relationship_name)
     {
-        $ids = [];
+        $ids_keys = [];
 
-        foreach ($from_entities as $k => $from_entity) {
+        foreach ($from_entities as $from_entity) {
 
-            $ids[$from_entity->{$this->foreign_key}] = true;
+            if ($from_entity instanceof entity && $from_entity->is_not_null()) {
+
+                $ids_keys[$from_entity->{$this->foreign_key}] = null;
+            }
         }
 
-        $entities = dao($this->entity_name, $this->with_deleted)->find_all_by_foreign_key('id', array_keys($ids));
+        $ids = array_keys($ids_keys);
 
-        foreach ($from_entities as $k => $from_entity) {
+        $entities = dao($this->entity_name, $this->with_deleted)->find_all_by_ids($ids);
 
-            $entity = $entities[$from_entity->{$this->foreign_key}] ?? null_entity::create($this->entity_name);
+        foreach ($from_entities as $from_entity) {
 
-            $from_entity->relationships[$relationship_name] = $entity;
+            if (array_key_exists($from_entity->{$this->foreign_key}, $entities)) {
+
+                $from_entity->{$relationship_name} = $entities[$from_entity->{$this->foreign_key}];
+            }
         }
 
         return $entities;
     }
 
-    public function update($values, entity $from_entity, $old_value = null)
+    public function update($entity, entity $from_entity, $old_entity = null)
     {
-        if ($values instanceof entity) {
-
-            $from_entity->attributes[$this->foreign_key] = $values->id;
-
-            return $from_entity;
+        if ($entity instanceof entity) {
+            $from_entity->{$this->foreign_key} = $entity->id;
+        } else {
+            $from_entity->{$this->foreign_key} = 0;
         }
-
-        return $values;
     }
 }/*}}}*/
 
@@ -477,98 +474,130 @@ class has_many extends relationship_ref
 
     public function load(entity $from_entity)
     {
-        return dao($this->entity_name, $this->with_deleted)->find_all_by_foreign_key($this->foreign_key, $from_entity->id);
+        return dao($this->entity_name, $this->with_deleted)->find_all_by_column([
+            $this->foreign_key => $from_entity->id,
+        ]);
     }
 
     public function batch_load(array $from_entities, $relationship_name)
     {
-        $ids = array_pluck($from_entities, 'id');
+        $ids = array_keys($from_entities);
 
-        $children = dao($this->entity_name, $this->with_deleted)->find_all_by_foreign_key($this->foreign_key, $ids);
+        $entities = dao($this->entity_name, $this->with_deleted)->find_all_by_column([
+            $this->foreign_key => $ids,
+        ]);
 
-        $empty_children = [];
+        $entities_indexed_by_foreign_key = [];
 
-        foreach ($from_entities as $k => $from_entity) {
+        foreach ($entities as $entity) {
 
-            $from_entity->relationships[$relationship_name] = $empty_children;
+            $foreign_id = $entity->{$this->foreign_key};
+
+            if (! array_key_exists($foreign_id,  $entities_indexed_by_foreign_key)) {
+
+                $entities_indexed_by_foreign_key[$foreign_id] = [];
+            }
+
+            $entities_indexed_by_foreign_key[$foreign_id][$entity->id] = $entity;
         }
 
-        foreach ($children as $child) {
+        foreach ($from_entities as $from_entity) {
 
-            $from_entity = $from_entities[$child->{$this->foreign_key}];
-
-            $from_entity->relationships[$relationship_name][$child->id] = $child;
+            $from_entity->{$relationship_name} = $entities_indexed_by_foreign_key[$from_entity->id] ?? [];
         }
 
-        return $children;
+        return $entities;
     }
 
-    public function update($values, entity $from_entity, $old_value = null)
+    public function update($entities, entity $from_entity, $old_entities = [])
     {
-        return $values;
+        foreach ($old_entities as $old_entity) {
+            $old_entity->{$this->foreign_key} = $from_entity->id;
+        }
+
+        foreach ($entities as $entity) {
+            $entity->{$this->foreign_key} = $from_entity->id;
+        }
     }
 }/*}}}*/
 
 abstract class dao
 {
     /*{{{*/
-    protected $table_name = '';
-    protected $db_config_key = 'default';
     protected $class_name;
-
-    private $with_deleted = false;
-
-    // structs 中有 delete_time 字段时才支持软删除
-    public function set_with_deleted($with_deleted)
-    {
-        $this->with_deleted = $with_deleted;
-    }
-
-    private function is_soft_deletable()
-    {
-        $class_name = $this->class_name;
-
-        return array_key_exists('delete_time', $class_name::init()->structs);
-    }
+    protected $table_name;
+    protected $db_config_key;
+    protected $with_deleted;
 
     public function __construct()
-    {
-        $this->class_name = str_replace('_dao', '', get_class($this));
-    }
+    {/*{{{*/
+        $this->class_name = substr(get_class($this), 0, -4);
+    }/*}}}*/
 
-    public function find($id)
-    {
-        $entity = local_cache_get($this->class_name, $id);
+    public function set_with_deleted($with_deleted)
+    {/*{{{*/
+        $this->with_deleted = $with_deleted;
+    }/*}}}*/
 
-        if ($entity instanceof entity) {
-            return $entity;
+    final protected function with_deleted_and_sql(?string $alias = null)
+    {/*{{{*/
+        $alias = $alias ? $alias.'.': '';
+
+        if ($this->with_deleted) {
+            return '';
+        } else {
+            return ' and '.$alias.'delete_time is null';
+        }
+    }/*}}}*/
+
+    final protected function with_deleted_where_sql(?string $alias = null)
+    {/*{{{*/
+        $alias = $alias ? $alias.'.': '';
+
+        if ($this->with_deleted) {
+            return '';
+        } else {
+            return ' where '.$alias.'delete_time is null';
+        }
+    }/*}}}*/
+
+    final protected function with_deleted_where_sql_and(?string $alias = null)
+    {/*{{{*/
+        $alias = $alias ? $alias.'.': '';
+
+        if ($this->with_deleted) {
+            return ' where';
+        } else {
+            return ' where '.$alias.'delete_time is null and';
+        }
+    }/*}}}*/
+
+    public function find_by_id($id)
+    {/*{{{*/
+        if (empty($id)) {
+            return null_entity::create($this->class_name);
         }
 
-        $with_deleted_sql = '';
+        $entity = local_cache_get($this->class_name, $id);
 
-        if ($this->is_soft_deletable()) {
+        if (is_null($entity)) {
 
-            if (! $this->with_deleted) {
-                $with_deleted_sql = 'and delete_time is null';
+            $with_deleted_sql = $this->with_deleted_and_sql();
+
+            $row = db_query_first('select * from `'.$this->table_name.'` where id = :id '.$with_deleted_sql, [':id' => $id], $this->db_config_key);
+            if ($row) {
+                $entity = $this->row_to_entity($row);
+                local_cache_set($entity);
+            } else {
+                $entity = null_entity::create($this->class_name);
             }
         }
 
-        $row = db_query_first('select * from `'.$this->table_name.'` where id = :id '.$with_deleted_sql, [
-            ':id' => $id,
-        ], $this->db_config_key);
-
-        if ($row) {
-            $entity = $this->row_to_entity($row);
-            local_cache_set($entity);
-
-            return $entity;
-        }
-
-        return null_entity::create($this->class_name);
-    }
+        return $entity;
+    }/*}}}*/
 
     public function find_by_column(array $columns)
-    {
+    {/*{{{*/
         if (! $this->with_deleted) {
             $columns['delete_time'] = null;
         } else {
@@ -577,31 +606,83 @@ abstract class dao
 
         list($where, $binds) = db_simple_where_sql($columns);
 
-        return $this->find_by_sql('select * from `'.$this->table_name.'` where '.$where.' order by id limit 1', $binds);
-    }
+        return $this->find_by_sql('select * from `'.$this->table_name."` where $where order by id", $binds);
+    }/*}}}*/
+
+    protected function find_by_condition($condition, array $binds = [])
+    {/*{{{*/
+        $with_deleted_sql = $this->with_deleted_where_sql_and();
+
+        return $this->find_by_sql('select * from `'.$this->table_name.'`'.$with_deleted_sql.' '.$condition, $binds);
+    }/*}}}*/
+
+    protected function find_by_sql($sql_template, array $binds = [])
+    {/*{{{*/
+        $row = db_query_first($sql_template, $binds, $this->db_config_key);
+
+        if (empty($row)) {
+            return null_entity::create($this->class_name);
+        }
+
+        $entity = local_cache_get($this->class_name, $row['id']);
+        if (!is_null($entity)) {
+            return $entity;
+        }
+
+        $entity = $this->row_to_entity($row);
+        local_cache_set($entity);
+
+        return $entity;
+    }/*}}}*/
+
+    public function find_all_by_ids(array $ids)
+    {/*{{{*/
+        if (empty($ids)) {
+            return [];
+        }
+
+        $with_deleted_sql = $this->with_deleted_and_sql();
+
+        $sql = [
+            'sql_template' => 'select * from `'.$this->table_name.'` where id in :ids'.$with_deleted_sql.' order by find_in_set(id, :set)',
+            'binds' => [
+                ':ids' => $ids,
+                ':set' => implode(',', $ids),
+            ],
+        ];
+
+        $rows = db_query($sql['sql_template'], $sql['binds'], $this->db_config_key);
+
+        $entities = [];
+
+        foreach ($rows as $row) {
+            $entity = local_cache_get($this->class_name, $row['id']);
+            if (is_null($entity)) {
+                $entity = $this->row_to_entity($row);
+                local_cache_set($entity);
+            }
+            $entities[$entity->id] = $entity;
+        }
+
+        return $entities;
+    }/*}}}*/
 
     public function find_all()
-    {
-        $with_deleted_sql = '';
-        if (! $this->with_deleted) {
-            $with_deleted_sql = 'where delete_time is null';
-        }
+    {/*{{{*/
+        $with_deleted_sql = $this->with_deleted_where_sql();
 
-        return $this->find_all_by_sql('select * from `'.$this->table_name.'` '.$with_deleted_sql.' order by id', []);
-    }
+        return $this->find_all_by_sql('select * from `'.$this->table_name.'`'.$with_deleted_sql.' order by id', []);
+    }/*}}}*/
 
     public function find_all_order_by_id_desc()
-    {
-        $with_deleted_sql = '';
-        if (! $this->with_deleted) {
-            $with_deleted_sql = 'where delete_time is null';
-        }
+    {/*{{{*/
+        $with_deleted_sql = $this->with_deleted_where_sql();
 
-        return $this->find_all_by_sql('select * from `'.$this->table_name.'` '.$with_deleted_sql.' order by id desc', []);
-    }
+        return $this->find_all_by_sql('select * from `'.$this->table_name.'`'.$with_deleted_sql.' order by id desc', []);
+    }/*}}}*/
 
     public function find_all_by_column(array $columns)
-    {
+    {/*{{{*/
         if ($columns) {
 
             if (! $this->with_deleted) {
@@ -616,30 +697,15 @@ abstract class dao
         } else {
             return $this->find_all();
         }
-    }
-
-    public function find_all_by_foreign_key(string $foreign_key, $value)
-    {
-        $with_deleted_sql = '';
-        if (! $this->with_deleted) {
-            $with_deleted_sql = 'and delete_time is null';
-        }
-
-        $sql_template = "select * from `$this->table_name` where $foreign_key = :foreign_key $with_deleted_sql";
-
-        return $this->find_all_by_sql($sql_template, [
-            ':foreign_key' => $value,
-        ]);
-    }
+    }/*}}}*/
 
     protected function find_all_by_condition($condition, array $binds = [])
-    {
+    {/*{{{*/
         return $this->find_all_by_sql('select * from `'.$this->table_name.'` where '.  $condition, $binds);
-    }
+    }/*}}}*/
 
-    // 优先从本地缓存取
     protected function find_all_by_sql($sql_template, array $binds = [])
-    {
+    {/*{{{*/
         $entities = [];
 
         $rows = db_query($sql_template, $binds, $this->db_config_key);
@@ -654,11 +720,10 @@ abstract class dao
         }
 
         return $entities;
-    }
+    }/*}}}*/
 
-    // 返回 [group_value => [id => entity]]
     protected function find_all_grouped_entities_by_sql($group_key, $sql_template, array $binds = [])
-    {
+    {/*{{{*/
         $entities = [];
 
         $rows = db_query($sql_template, $binds, $this->db_config_key);
@@ -679,11 +744,10 @@ abstract class dao
         }
 
         return $entities;
-    }
+    }/*}}}*/
 
-    // 返回 ['list' => [...], 'pagination' => ['page_size', 'current_page', 'count', 'pages']]
     public function find_all_paginated_by_current_page_and_column($current_page, $page_size, array $columns)
-    {
+    {/*{{{*/
         $res = [
             'list' => [],
             'pagination' => [
@@ -708,10 +772,10 @@ abstract class dao
         $res['list'] = $this->find_all_by_condition($condition." limit $offset, $page_size", $binds);
 
         return $res;
-    }
+    }/*}}}*/
 
     public function find_all_paginated_by_current_page_and_condition($current_page, $page_size, $condition, array $binds = [])
-    {
+    {/*{{{*/
         $res = [
             'list' => [],
             'pagination' => [
@@ -735,34 +799,28 @@ abstract class dao
         $res['list'] = $this->find_all_by_condition($condition." limit $offset, $page_size", $binds);
 
         return $res;
-    }
+    }/*}}}*/
 
     public function count()
-    {
-        $with_deleted_sql = '';
-        if (! $this->with_deleted) {
-            $with_deleted_sql = 'where delete_time is null';
-        }
+    {/*{{{*/
+        $with_deleted_sql = $this->with_deleted_where_sql();
 
-        $sql = 'select count(*) as count from `'.$this->table_name.'` '.$with_deleted_sql;
+        $sql = 'select count(*) as count from `'.$this->table_name.'`'.$with_deleted_sql;
 
         return db_query_value('count', $sql, [], $this->db_config_key);
-    }
+    }/*}}}*/
 
     protected function count_by_condition($condition, array $binds = [])
-    {
-        $with_deleted_sql = 'where';
-        if (! $this->with_deleted) {
-            $with_deleted_sql = 'where delete_time is null and';
-        }
+    {/*{{{*/
+        $with_deleted_sql = $this->with_deleted_where_sql_and();
 
-        $sql = 'select count(*) as count from `'.$this->table_name.'` '.$with_deleted_sql.' '.$condition;
+        $sql = 'select count(*) as count from `'.$this->table_name.'`'.$with_deleted_sql.' '.$condition;
 
         return db_query_value('count', $sql, $binds, $this->db_config_key);
-    }
+    }/*}}}*/
 
     private function get_dirty($entity)
-    {
+    {/*{{{*/
         $rows = [];
 
         foreach ($entity->attributes as $column => $value) {
@@ -776,10 +834,10 @@ abstract class dao
         $rows['delete_time'] = $entity->delete_time;
 
         return $rows;
-    }
+    }/*}}}*/
 
     private function row_to_entity($rows)
-    {
+    {/*{{{*/
         $entity = new $this->class_name();
 
         $entity->id = $rows['id'];
@@ -797,16 +855,15 @@ abstract class dao
         $entity->attributes = $entity->structs = $rows;
 
         return $entity;
-    }
+    }/*}}}*/
 
     final public function get_db_config_key()
-    {
+    {/*{{{*/
         return $this->db_config_key;
-    }
+    }/*}}}*/
 
-    // 供 UnitOfWork 在提交阶段使用
     final public function dump_insert_sql($entity)
-    {
+    {/*{{{*/
         $columns = $values = $binds = [];
 
         $insert = $entity->attributes + [
@@ -826,10 +883,10 @@ abstract class dao
             'sql_template' => 'insert into `'.$this->table_name.'` (`'.implode('`, `', $columns).'`) values ('.implode(', ', $values).')',
             'binds' => $binds,
         ];
-    }
+    }/*}}}*/
 
     final public function dump_update_sql($entity)
-    {
+    {/*{{{*/
         $binds = $update = [];
 
         $binds[':id'] = $entity->id;
@@ -844,17 +901,17 @@ abstract class dao
             'sql_template' => 'update `'.$this->table_name.'` set '.implode(', ', $update).' where id = :id and version = :old_version',
             'binds' => $binds,
         ];
-    }
+    }/*}}}*/
 
     final public function dump_delete_sql($entity)
-    {
+    {/*{{{*/
         return [
             'sql_template' => 'delete from `'.$this->table_name.'` where id = :id',
             'binds' => [
                 ':id' => $entity->id,
             ],
         ];
-    }
+    }/*}}}*/
 }/*}}}*/
 
 function dao($class_name, $with_deleted = false)
@@ -944,7 +1001,6 @@ function local_cache_flush_all()
     return $cached;
 }
 
-// 默认取参数 {entity_name}_id，$require=true 时找不到报错，否则返回 null_entity
 function input_entity($entity_name, $name = null, $require = false)
 {
     if (is_null($name)) {
@@ -953,7 +1009,7 @@ function input_entity($entity_name, $name = null, $require = false)
 
     if ($id = input($name)) {
 
-        $entity = dao($entity_name)->find($id);
+        $entity = dao($entity_name)->find_by_id($id);
 
         otherwise_error_code(strtoupper($entity_name).'_NOT_FOUND', $entity->is_not_null());
 
@@ -968,7 +1024,6 @@ function input_entity($entity_name, $name = null, $require = false)
     }
 }
 
-// relationship_chain 用点号分隔（如 'creator.orders'），防止 N+1
 function relationship_batch_load($entities, $relationship_chain)
 {
     if (empty($entities)) {
@@ -991,4 +1046,4 @@ function relationship_batch_load($entities, $relationship_chain)
     }
 
     return $entities;
-}
+}       
