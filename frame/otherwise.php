@@ -4,6 +4,7 @@ define('OTHERWISE_MESSAGE_DELIMITER', '---');
 
 class business_exception extends exception { }
 
+// $assertion 为 true 时正常通过，为 false 时抛出异常中断流程
 function otherwise($assertion, $description = 'assertion is not true', $exception_class_name = 'exception', $exception_code = 'OTHERWISE_DEFAULT')
 {/*{{{*/
     if (! $assertion) {
@@ -38,7 +39,7 @@ function otherwise_get_error_message(throwable $ex)
     return $error_info['message'];
 }/*}}}*/
 
-// 从 config('error_code') 读取文案并抛出，replace_contents 可替换占位符
+// $assertion 为 true 时正常通过，为 false 时抛出业务异常；replace_contents 可替换文案中的占位符
 function otherwise_error_code($error_code, $assertion, array $replace_contents = [])
 {/*{{{*/
     if (! $assertion) {
@@ -52,7 +53,7 @@ function otherwise_error_code($error_code, $assertion, array $replace_contents =
                 $description = str_replace($replace_key, $content, $description);
             }
         }
-        
+
         throw new business_exception($error_code.OTHERWISE_MESSAGE_DELIMITER.$description, -1);
     }
 }/*}}}*/
