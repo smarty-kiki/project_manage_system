@@ -66,7 +66,7 @@ if_any($rule, $action)     // 任意 HTTP 方法
 
 ```php
 if_get('/user/*/post/*', function ($user_id, $post_id) {
-    $user = dao('user')->find($user_id);
+    $user = dao('user')->find_by_id($user_id);
     return $user->to_array();
 });
 ```
@@ -154,11 +154,11 @@ class demo_dao extends dao
 
 **查询方法**：
 ```php
-dao('demo')->find($id);                              // 单条（不存在返回 null_entity）
+dao('demo')->find_by_id($id);                        // 单条（不存在返回 null_entity）
 dao('demo')->find_by_column(['name' => 'test']);     // 按列查单条
 dao('demo')->find_all();                             // 全部，key 为 id
 dao('demo')->find_all_order_by_id_desc();            // 按 id 倒序
-dao('demo')->find_all_by_foreign_key('user_id', $uid); // 外键查询
+dao('demo')->find_all_by_column(['user_id' => $uid]); // 按列查多条
 dao('demo')->count();                                // 计数
 dao('demo', true)->find_all();                       // 含软删除记录
 
@@ -189,7 +189,7 @@ if_unit_of_work_disturbed(function (\Exception $e) { /* 异常后执行 */ });
 
 ### null entity 模式
 
-`dao()->find()` 查询不存在的记录时返回 `null_entity` 实例而非 null，避免空指针。访问 null_entity 的任何属性返回另一个 null_entity。
+`dao()->find_by_id()` 查询不存在的记录时返回 `null_entity` 实例而非 null，避免空指针。访问 null_entity 的任何属性返回另一个 null_entity。
 
 ### 新增 Entity/DAO 步骤
 
@@ -373,7 +373,7 @@ if_verify(function ($action, ...$args) {
 // 局部（controller 内显式调用）
 if_get('/admin/*', function ($id) {
     verify_admin();
-    return dao('admin')->find($id);
+    return dao('admin')->find_by_id($id);
 });
 ```
 

@@ -108,7 +108,7 @@ dao 构造函数自动从类名推导 `$class_name`（去掉 `_dao` 后缀）。
 
 ```php
 // 单条查询（不存在返回 null_entity）
-$entity = dao('demo')->find($id);
+$entity = dao('demo')->find_by_id($id);
 
 // 按列名查询
 $entity = dao('demo')->find_by_column(['name' => 'test']);
@@ -117,8 +117,8 @@ $entity = dao('demo')->find_by_column(['name' => 'test']);
 $entities = dao('demo')->find_all();
 $entities = dao('demo')->find_all_order_by_id_desc();
 
-// 外键查询
-$entities = dao('demo')->find_all_by_foreign_key('user_id', $user_id);
+// 按列名查询多条
+$entities = dao('demo')->find_all_by_column(['user_id' => $user_id]);
 
 // 分页
 list($list, $pagination) = dao('demo')->find_all_paginated_by_current_page_and_column($page, $size, ['status' => 1]);
@@ -142,7 +142,7 @@ $entities = dao('demo', true)->find_all();
 function do_something_with_demo(demo $demo, $param): array
 {
     $demo->status = 1;
-    $related = dao('other')->find_all_by_foreign_key('demo_id', $demo->id);
+    $related = dao('other')->find_all_by_column(['demo_id' => $demo->id]);
 
     return ['demo' => $demo, 'related' => $related];
 }
@@ -237,10 +237,10 @@ if_unit_of_work_disturbed(function (\Exception $e) {
 
 ## null entity 模式
 
-`dao('demo')->find($id)` 查询不存在的记录时返回 `null_entity` 实例而非 null，避免空指针：
+`dao('demo')->find_by_id($id)` 查询不存在的记录时返回 `null_entity` 实例而非 null，避免空指针：
 
 ```php
-$entity = dao('demo')->find($id);
+$entity = dao('demo')->find_by_id($id);
 if ($entity->is_null()) {
     // 记录不存在
 }
