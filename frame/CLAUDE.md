@@ -160,3 +160,113 @@ HTTP 请求工具：`http`（cURL 封装，支持 retry/timeout/callback）、`h
 - ORM 使用 Active Record + UnitOfWork 模式，乐观锁基于 version 字段
 - 软删除通过 delete_time 实现，dao 默认过滤已删除记录
 - 错误消息使用 `---` 分隔错误码和描述文本，业务逻辑错误码用英文大写而非数字
+
+## API 速查表（按场景查找）
+
+每个场景只列首选函数，AI 生成代码时按此表决策，不需要记忆全部 API。
+
+### 路由定义
+
+| 我要做 | 调用 |
+|--------|------|
+| 注册 GET 路由 | `if_get('/path/*', function ($param) { ... })` |
+| 注册 POST 路由 | `if_post('/path/*', function ($param) { ... })` |
+| 注册任意方法路由 | `if_any('/path/*', function ($param) { ... })` |
+| 404 处理 | `not_found(function () { ... })` |
+| 全局鉴权拦截 | `if_verify(function ($action, ...$args) { return $action; })` |
+
+路由闭包中 `*` 按位置对应闭包参数，如 `/user/*/post/*` → `function ($user_id, $post_id)`
+
+### 读请求数据
+
+| 我要做 | 调用 |
+|--------|------|
+| 读 GET/POST 参数 | `input('name', $default)` |
+| 批量读参数 | `input_list('a', 'b')` |
+| 读 JSON body 字段 | `input_json('path.to.key', $default)` |
+| 读原始 POST body | `input_post_raw()` |
+| 读上传文件 | `input_file('file', $default)` |
+| 读 Cookie | `cookie('name', $default)` |
+| 读 SERVER 变量 | `server('REQUEST_URI', $default)` |
+
+### 查数据
+
+| 我要做 | 调用 |
+|--------|------|
+| 按 ID 查单条 | `dao('entity_name')->find_by_id($id)` — 不存在返回 null_entity |
+| 按列查单条 | `dao('entity_name')->find_by_column(['key' => 'val'])` |
+| 查询全部 | `dao('entity_name')->find_all()` — 返回数组，key 为 id |
+| 按列查多条 | `dao('entity_name')->find_all_by_column(['key' => 'val'])` |
+| 分页查询 | `dao('entity_name')->find_all_paginated_by_current_page_and_column($page, $size, $column)` — 返回 `[$list, $pagination]` |
+| 计数 | `dao('entity_name')->count()` |
+| 含软删除记录 | `dao('entity_name', true)->find_all()` — 第二个参数 `true` 表示 with_deleted |
+| 查不存在的记录 | 用 `$entity->is_null()` 判断，不要用 `=== null` |
+
+### 写数据
+
+| 我要做 | 调用 |
+|--------|------|
+| 创建实体 | `$entity = EntityName::create($required_param); $entity->field = 'val';` — 在 unit_of_work 内操作，不需要手动 save |
+| 修改实体 | `$entity->field = 'new_val';` — 在 unit_of_work 内修改 |
+| 删除实体（软删除） | `$entity->delete();` — 设置 delete_time |
+| 恢复软删除 | `$entity->restore();` |
+| 物理删除 | `$entity->force_delete();` |
+| 批量操作事务 | `unit_of_work(function () { /* 多实体操作 */ });` |
+
+控制器闭包已自动包裹在 unit_of_work 中，不需要手动调用。
+
+### 返回响应
+
+| 我要做 | 调用 |
+|--------|------|
+| 返回 JSON | `return $entity;` 或 `return ['key' => 'val'];` — 返回数组/Entity 自动 JSON 序列化 |
+| 返回 HTML | `return render('模块/页面', ['title' => 'xxx']);` |
+| 重定向 | `redirect('/path');` — 在路由闭包末尾自动触发 Location header |
+
+### 异常与校验
+
+| 我要做 | 调用 |
+|--------|------|
+| 业务断言失败 | `otherwise($assertion, '描述', '异常类名', '错误码');` |
+| 返回业务错误码 | `otherwise_error_code('USER_NOT_FOUND', $entity->is_not_null());` — 自动返回 code---message 格式 |
+| 自定义异常处理 | `if_has_exception(function ($ex) { ... })` |
+
+### 视图
+
+| 我要做 | 调用 |
+|--------|------|
+| 渲染 Blade 模板 | `render('模块/模板名', $data)` — 模板路径相对于 view/，去掉 .php 扩展名 |
+| 引入子模板 | `@include('layout/header')` — Blade 模板内使用 |
+
+### 配置
+
+| 我要做 | 调用 |
+|--------|------|
+| 读取配置 | `config('mysql')` — 自动合并开发/生产环境配置 |
+| 读取中间件资源 | `config_midware('redis')` — 从 midwares → resources 解析 |
+
+### 日志
+
+| 我要做 | 调用 |
+|--------|------|
+| 记录异常 | `log_exception($ex)` |
+| 记录通知 | `log_notice('消息')` |
+| 记录模块日志 | `log_module('模块名', '消息')` |
+
+### 队列
+
+| 我要做 | 调用 |
+|--------|------|
+| 投递任务 | `queue_push('job_name', ['key' => 'val'], $delay_seconds)` |
+| 定义任务处理器 | `queue_job('job_name', function ($data, $job_id) { return true; }, ...)` — 任务文件放在 command/queue/queue_job/ |
+
+### 工具函数
+
+| 我要做 | 调用 |
+|--------|------|
+| 获取当前日期时间 | `datetime()` |
+| 计算时间差 | `datetime_diff($time1, $time2)` |
+| HTTP 请求 | `http('http://url', $params, $method, $callback, $timeout)` |
+| HTTP JSON 请求 | `http_json('http://url', $data, $timeout)` |
+| 数组取嵌套值 | `array_get($array, 'key.sub.key', $default)` — 支持点号分隔路径 |
+| 调试输出 | `dd($var)` — var_dump + die |
