@@ -181,11 +181,71 @@ $this->has_many('orders', 'order', 'user_id');
 关系是懒加载的，首次通过 `__get` 访问时查询并缓存。
 每个关系自动生成 `_with_deleted` 变体（如 `orders_with_deleted`）以包含软删除关联实体。
 
+### 参数自动推导规则
+
+`belongs_to`、`has_one`、`has_many` 的第二、三参数在多数情况下可省略，框架按以下规则自动推导：
+
+| 方法 | 省略 entity_name 时 | 省略 foreign_key 时 |
+|------|---------------------|---------------------|
+| `belongs_to($name, $entity, $fk)` | 取 `$name` | 取 `{$entity}_id` |
+| `has_one($name, $entity, $fk)` | 取 `$name` | 取 `{$self_entity_name}_id` |
+| `has_many($name, $entity, $fk)` | 取 `$name` | 取 `{$self_entity_name}_id` |
+
+**注意**：当关系名是复数（如 `'modules'`）但实体/表名是单数（如 `'module'`）时，必须显式传入 entity_name 参数：
+
+```php
+// 正确：关系名 'modules' 与表名 'module' 不一致，需显式指定
+$this->has_many('modules', 'module');
+
+// 正确：关系名与实体名一致，可省略
+$this->belongs_to('project');
+```
+
+### 优先使用关联关系查询
+
+当父实体已加载时，优先通过 `$parent->children` 懒加载获取子实体，而非直接调用 DAO 按外键查询：
+
+```php
+// 优先
+$endpoints = $project->endpoints;
+$all_use_cases = $project->use_cases;
+
+// 不推荐（仅在需要额外过滤条件时使用）
+$endpoints = dao('endpoint')->find_all_by_column(['project_id' => $project_id]);
+```
+
+两条 SQL 完全等价，但关联关系写法更一致、更易维护，且天然跟随实体关系变化。
+
 ### 批量加载（防止后续遍历 $entities 时共产生 N+1 条 SQL）
 
 ```php
 relationship_batch_load($entities, 'relationship.chain');
 ```
+
+**链式加载**（需中间实体已定义 has_many），一轮调用加载整条链上的所有关联关系：
+```php
+// 加载 endpoints → modules → function_items 和 pages
+relationship_batch_load($endpoints, 'modules.function_items');
+relationship_batch_load($endpoints, 'modules.pages');
+
+// 关联关系已全部就位，直接访问
+foreach ($endpoints as $ep) {
+    foreach ($ep->modules as $mod) {
+        $functions = $mod->function_items;
+        $pages = $mod->pages;
+    }
+}
+```
+
+**按需构建索引数组**（批量加载已处理数据查询，以下只是组织数据结构的遍历）：
+
+```php
+$endpoints = dao('endpoint')->find_all_by_column(['project_id' => $pid]);
+$functions = relationship_batch_load($endpoints, 'modules.function_items');
+$pages = relationship_batch_load($endpoints, 'modules.pages');
+```
+
+`relationship_batch_load` 返回值取决于关系类型：`has_many` 返回子实体数组（key=子实体id），`belongs_to` 返回父实体数组（key=父实体id）。链式调用时每轮返回的数组作为下一轮的输入，最终返回链末端实体数组。
 
 ## 自动加载（autoload.php）
 

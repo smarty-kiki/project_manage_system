@@ -2,7 +2,6 @@
 
 // 关系变体后缀：每个 has_one/belongs_to/has_many 自动注册带此后缀的变体，查询时包含软删除记录
 define('ENTITY_RELATIONSHIP_DELETED_SUFFIX', '_with_deleted');
-define('ENTITY_STRUCT_VALIDATOR_ERROR_CODE', 'ENTITY_STRUCT_VALIDATOR_ERROR');
 define('ENTITY_DEFAULT_ERROR_CODE', 'ENTITY_DEFAULT_ERROR');
 
 // Active Record 实体基类 — 内置 id/version/create_time/update_time/delete_time 五个系统字段，
