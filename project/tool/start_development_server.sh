@@ -2,7 +2,7 @@
 
 ROOT_DIR="$(cd "$(dirname $0)" && pwd)"/../..
 
-sudo docker run --rm -ti -p 80:80 -p 3306:3306 --name php-vibe-coding-frame \
+sudo docker run --rm -ti -p 80:80 -p 3306:3306 -p 12345:12345 -p 12346:12346 --name php-vibe-coding-frame \
     -v $ROOT_DIR/:/var/www/php-vibe-coding-frame \
     -v $ROOT_DIR/project/config/development/nginx/php-vibe-coding-frame.conf:/etc/nginx/sites-enabled/default \
     -v $ROOT_DIR/project/config/development/supervisor/php-vibe-coding-frame_queue_worker.conf:/etc/supervisor/conf.d/queue_worker.conf \
