@@ -63,6 +63,14 @@
         .sidebar-header { font-size: 16px; font-weight: 600; padding: 12px 20px; color: #1890ff; cursor: pointer; }
         .sidebar-header:hover { color: #40a9ff; }
         .sidebar-item .icon { margin-right: 10px; font-size: 15px; width: 18px; text-align: center; }
+        .sidebar-team-name { font-size: 13px; font-weight: 600; padding: 12px 20px 6px; color: #333; border-top: 1px solid #f0f0f0; margin-top: 4px; }
+        .sidebar-team-name:first-child { border-top: none; margin-top: 0; }
+        .project-item { padding: 8px 20px 8px 30px; color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .project-item:hover { color: #1890ff; }
+        .project-item.active { color: #1890ff; background: #e6f7ff; }
+        .sidebar-new-project { margin: 8px 12px; padding-top: 8px; border-top: 1px solid #f0f0f0; }
+        .sidebar-new-project a { display: block; padding: 8px; text-align: center; color: #1890ff; border: 1px dashed #1890ff; border-radius: 4px; font-size: 13px; }
+        .sidebar-new-project a:hover { background: #e6f7ff; text-decoration: none; }
         .main-content { flex: 1; padding: 20px; overflow: auto; }
         .page-top-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 0 16px; }
         .user-info { display: flex; align-items: center; gap: 12px; }
@@ -164,7 +172,19 @@
                 </a>
             @endforeach
         @else
+            @if (isset($team) && $team->is_not_null())
+            <div class="sidebar-team-name">{{ $team->name }}</div>
+            @if (isset($projects))
+                @foreach ($projects as $p)
+                <a href="#" class="project-item" onclick="alert('项目详情页开发中'); return false;">{{ $p->name }}</a>
+                @endforeach
+            @endif
+            <div class="sidebar-new-project">
+                <a href="#" onclick="showCreateModal(); return false;">+ 新建项目</a>
+            </div>
+            @else
             <div class="sidebar-item" style="color:#999;cursor:default">暂无菜单</div>
+            @endif
         @endif
     </aside>
 

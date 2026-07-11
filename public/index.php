@@ -64,6 +64,9 @@ function require_user_team_or_redirect($action, $args)
         '/api/team/list',
         '/account/logout',
         '/team/*/member',
+        '/team/*/project',
+        '/api/project/list',
+        '/api/project/create',
     ];
 
     $current_route = matched_rule();
@@ -133,6 +136,7 @@ if_not_found(function () {
 include CONTROLLER_DIR.'/base.php';
 include CONTROLLER_DIR.'/account.php';
 include CONTROLLER_DIR.'/team.php';
+include CONTROLLER_DIR.'/project.php';
 
 // fix
 not_found();

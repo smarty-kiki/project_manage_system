@@ -13,6 +13,8 @@ spl_autoload_register(function ($class_name) {
         'team' => 'entity/team.php',
         'team_member_dao' => 'dao/team_member.php',
         'team_member' => 'entity/team_member.php',
+        'project_dao' => 'dao/project.php',
+        'project' => 'entity/project.php',
     ];
 
     if (isset($class_maps[$class_name])) {
