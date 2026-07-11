@@ -2,11 +2,8 @@
 
 if_get('/', function ()
 {
-    return render('index/index', [
-        'title' => 'hello world',
-        'url_infos' => [
-            ['href' => '/', 'name' => '首页'],
-        ],
+    return render('index/landing', [
+        'title' => '项目管理系统 — 让项目管理回归简单',
     ]);
 });
 
