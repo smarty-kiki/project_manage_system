@@ -135,11 +135,11 @@ if_post('/api/account/send_code', function () {
         ->find_all_by_column(['email' => $email, 'type' => 'enter', 'used' => 0]);
 
     foreach ($recent_code as $code) {
-        if (!$code->is_expired()) {
-            $remaining = datetime_diff(datetime(), $code->expire_time);
-            $remaining_seconds = max(0, 60 - (int)$remaining);
-            otherwise_error_code('CODE_SEND_TOO_FREQUENT', false, ['{seconds}' => (string)$remaining_seconds]);
+        if ($code->is_expired()) {
+            continue;
         }
+        $remaining_seconds = (int)datetime_diff(datetime(), $code->expire_time);
+        otherwise_error_code('CODE_SEND_TOO_FREQUENT', false, ['{seconds}' => (string)max(1, $remaining_seconds)]);
     }
 
     $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
