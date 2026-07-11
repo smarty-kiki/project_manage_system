@@ -1,7 +1,7 @@
 @php
 $secondary_items = [
     ['label' => '我的团队', 'href' => '/account/team', 'icon' => '&#9776;', 'active' => true],
-    ['label' => '创建团队', 'href' => '/account/team/create', 'icon' => '&#43;'],
+    ['label' => '账户详情', 'href' => '/account/detail', 'icon' => '&#9998;'],
 ];
 @endphp
 @include('layout/app')
