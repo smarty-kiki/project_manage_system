@@ -60,6 +60,8 @@
         .sidebar-item { display: flex; align-items: center; padding: 10px 20px; color: #666; font-size: 14px; }
         .sidebar-item:hover { color: #1890ff; background: #f5f7fa; }
         .sidebar-item.active { color: #1890ff; background: #e6f7ff; font-weight: 500; }
+        .sidebar-header { font-size: 16px; font-weight: 600; padding: 12px 20px; color: #1890ff; cursor: pointer; }
+        .sidebar-header:hover { color: #40a9ff; }
         .sidebar-item .icon { margin-right: 10px; font-size: 15px; width: 18px; text-align: center; }
         .main-content { flex: 1; padding: 20px; overflow: auto; }
         .page-top-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 0 16px; }
@@ -144,7 +146,7 @@
         @endif
     </div>
     <div class="navbar-user" style="margin-left:auto;">
-        <span class="user-name">{{ $user->name or '用户' }}</span>
+        <a href="/account/detail" class="user-name">{{ $user->name or '用户' }}</a>
         <a href="/account/logout">退出</a>
     </div>
 </nav>

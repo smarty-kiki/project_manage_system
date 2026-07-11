@@ -78,6 +78,53 @@ if_get('/account/set_name', function () {
     ]);
 });
 
+// Account detail page
+if_get('/account/detail', function () {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return redirect('/account/enter');
+    }
+
+    $user = dao('team_account')->find_by_id($user_id);
+    if ($user->is_null()) {
+        return redirect('/account/enter');
+    }
+
+    return render('account/detail', [
+        'title' => '账户详情',
+        'user' => $user,
+    ]);
+});
+
+// API: Update user name
+if_post('/api/account/update_name', function () {
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        otherwise_error_code('PERMISSION_DENIED', false);
+    }
+
+    $name = trim(input('name', ''));
+
+    if (all_empty($name)) {
+        otherwise_error_code('NAME_REQUIRED', false);
+    }
+
+    $user = dao('team_account')->find_by_id($user_id);
+    if ($user->is_null()) {
+        otherwise_error_code('USER_NOT_FOUND', false);
+    }
+
+    $user->name = $name;
+
+    $redirect_uri = '/account/detail';
+
+    if (is_ajax()) {
+        return ['redirect' => $redirect_uri, 'name' => $name];
+    }
+
+    return redirect($redirect_uri);
+});
+
 // Team list page
 if_get('/account/team', function () {
     $redirect = require_user_name();

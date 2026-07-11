@@ -1,5 +1,5 @@
 <div class="sidebar">
-    <div class="sidebar-header">{{ $user->name or '用户' }}</div>
+    <a href="/account/detail" class="sidebar-header">{{ $user->name or '用户' }}</a>
     <nav class="sidebar-nav">
         <a href="/account/team" class="sidebar-item">
             <span class="icon">&#9776;</span>

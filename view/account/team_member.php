@@ -274,6 +274,7 @@ window.confirmLeave = function() {
 window.removeMember = function(userId) {
     var modal = document.getElementById('inviteModal');
     var cardBody = modal.querySelector('.card-body');
+    modal.style.display = 'flex';
 
     cardBody.innerHTML = '<p style="margin-bottom:16px;">确定要移除该成员吗？</p>' +
         '<div class="flex gap-8" style="justify-content:flex-end">' +
