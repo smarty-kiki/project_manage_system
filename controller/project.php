@@ -60,9 +60,18 @@ if_get('/team/*/project/*', function ($team_id, $project_id) {
     $systems = dao('system')->find_all_by_column(['project_id' => (int)$project_id]);
     $modules = dao('module')->find_all_by_column(['project_id' => (int)$project_id]);
     $business_processes = dao('business_process')->find_all_by_column(['project_id' => (int)$project_id]);
+    $process_nodes = dao('process_node')->find_all_by_column(['project_id' => (int)$project_id]);
     $requirements = dao('requirement')->find_all_by_column(['project_id' => (int)$project_id]);
     $bugs = dao('bug')->find_all_by_column(['project_id' => (int)$project_id]);
     $project_roles = dao('project_role')->find_all_by_column(['project_id' => (int)$project_id]);
+
+    $role_modules = [];
+    foreach ($project_roles as $role) {
+        $links = dao('project_role_module')->find_all_by_column(['project_role_id' => $role->id]);
+        foreach ($links as $link) {
+            $role_modules[$role->id][] = $link->module_id;
+        }
+    }
 
     $projects = dao('project')->find_all_by_column(['team_id' => $team_id]);
     $user = dao('team_account')->find_by_id($user_id);
@@ -81,9 +90,11 @@ if_get('/team/*/project/*', function ($team_id, $project_id) {
         'systems' => $systems,
         'modules' => $modules,
         'business_processes' => $business_processes,
+        'process_nodes' => $process_nodes,
         'requirements' => $requirements,
         'bugs' => $bugs,
         'project_roles' => $project_roles,
+        'role_modules' => $role_modules,
     ]);
 });
 
@@ -234,6 +245,7 @@ if_post('/api/business_process/create', function () {
     $project_id = (int)input('project_id', 0);
     $name = trim(input('name', ''));
     $description = trim(input('description', ''));
+    $initiator_role_id = (int)input('initiator_role_id', 0);
 
     if (!$project_id || !$name) {
         otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id and name']);
@@ -244,12 +256,13 @@ if_post('/api/business_process/create', function () {
         otherwise_error_code('PROJECT_NOT_FOUND', false);
     }
 
-    $bp = business_process::create($project_id, $name, $description);
+    $bp = business_process::create($project_id, $name, $description, $initiator_role_id);
 
     return [
         'id' => $bp->id,
         'name' => $bp->name,
         'description' => $bp->description,
+        'initiator_role_id' => $bp->initiator_role_id,
     ];
 });
 
@@ -260,6 +273,7 @@ if_post('/api/process_node/create', function () {
 
     $user_id = get_current_user_id();
     $business_process_id = (int)input('business_process_id', 0);
+    $project_id = (int)input('project_id', 0);
     $name = trim(input('name', ''));
     $description = trim(input('description', ''));
     $sort_order = (int)input('sort_order', 0);
@@ -273,7 +287,7 @@ if_post('/api/process_node/create', function () {
         otherwise_error_code('BUSINESS_PROCESS_NOT_FOUND', false);
     }
 
-    $node = process_node::create($business_process_id, $name, $description, $sort_order);
+    $node = process_node::create($business_process_id, $name, $description, $sort_order, $project_id);
 
     return [
         'id' => $node->id,
@@ -360,6 +374,7 @@ if_post('/api/project_role/create', function () {
     $project_id = (int)input('project_id', 0);
     $name = trim(input('name', ''));
     $description = trim(input('description', ''));
+    $process_node_id = (int)input('process_node_id', 0);
 
     if (!$project_id || !$name) {
         otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id and name']);
@@ -370,12 +385,13 @@ if_post('/api/project_role/create', function () {
         otherwise_error_code('PROJECT_NOT_FOUND', false);
     }
 
-    $role = project_role::create($project_id, $name, $description);
+    $role = project_role::create($project_id, $name, $description, $process_node_id);
 
     return [
         'id' => $role->id,
         'name' => $role->name,
         'description' => $role->description,
+        'process_node_id' => $role->process_node_id,
     ];
 });
 
@@ -394,9 +410,79 @@ if_get('/api/project_role/list', function () {
             'id' => $r->id,
             'name' => $r->name,
             'description' => $r->description,
+            'process_node_id' => $r->process_node_id,
         ];
     }
 
     return $result;
+});
+
+// API: Update role process node
+if_post('/api/project_role/update_node', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $role_id = (int)input('role_id', 0);
+    $process_node_id = (int)input('process_node_id', 0);
+
+    if (!$role_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'role_id']);
+    }
+
+    $role = dao('project_role')->find_by_id($role_id);
+    if ($role->is_null()) {
+        otherwise_error_code('ROLE_NOT_FOUND', false);
+    }
+
+    $role->process_node_id = $process_node_id;
+
+    return ['id' => $role->id, 'process_node_id' => $role->process_node_id];
+});
+
+// API: Link role to module
+if_post('/api/project_role/link_module', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $role_id = (int)input('role_id', 0);
+    $module_id = (int)input('module_id', 0);
+
+    if (!$role_id || !$module_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'role_id and module_id']);
+    }
+
+    $role = dao('project_role')->find_by_id($role_id);
+    if ($role->is_null()) {
+        otherwise_error_code('ROLE_NOT_FOUND', false);
+    }
+
+    $module = dao('module')->find_by_id($module_id);
+    if ($module->is_null()) {
+        otherwise_error_code('MODULE_NOT_FOUND', false);
+    }
+
+    $link = project_role_module::create($role_id, $module_id);
+
+    return ['id' => $link->id];
+});
+
+// API: Unlink role from module
+if_post('/api/project_role/unlink_module', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $role_id = (int)input('role_id', 0);
+    $module_id = (int)input('module_id', 0);
+
+    if (!$role_id || !$module_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'role_id and module_id']);
+    }
+
+    $link = dao('project_role_module')->find_by_column(['project_role_id' => $role_id, 'module_id' => $module_id]);
+    if ($link->is_not_null()) {
+        $link->force_delete();
+    }
+
+    return ['success' => true];
 });
 

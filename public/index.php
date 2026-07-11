@@ -77,6 +77,9 @@ function require_user_team_or_redirect($action, $args)
         '/api/bug/create',
         '/api/project_role/create',
         '/api/project_role/list',
+        '/api/project_role/update_node',
+        '/api/project_role/link_module',
+        '/api/project_role/unlink_module',
     ];
 
     $current_route = matched_rule();

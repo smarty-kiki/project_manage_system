@@ -2,10 +2,12 @@
 $secondary_items = [];
 $systems = $systems ?? [];
 $business_processes = $business_processes ?? [];
+$process_nodes = $process_nodes ?? [];
 $requirements = $requirements ?? [];
 $bugs = $bugs ?? [];
 $modules = $modules ?? [];
 $project_roles = $project_roles ?? [];
+$role_modules = $role_modules ?? [];
 @endphp
 @include('layout/app')
 
@@ -117,13 +119,19 @@ $project_roles = $project_roles ?? [];
                 <tr>
                     <th>名称</th>
                     <th>描述</th>
-                    <th>节点数</th>
+                    <th>发起角色</th>
                 </tr>
                 @foreach ($business_processes as $bp)
+                @php
+                    $initiator = null;
+                    if ($bp->initiator_role_id) {
+                        foreach ($project_roles as $r) { if ($r->id == $bp->initiator_role_id) { $initiator = $r; break; } }
+                    }
+                @endphp
                 <tr>
                     <td><strong>{{ $bp->name }}</strong></td>
                     <td style="color: #666;">{{ $bp->description or '-' }}</td>
-                    <td>-</td>
+                    <td>{{ $initiator ? $initiator->name : '-' }}</td>
                 </tr>
                 @endforeach
             </table>
@@ -142,15 +150,32 @@ $project_roles = $project_roles ?? [];
             @if (empty($project_roles))
             <div class="empty-state"><p>暂无角色</p></div>
             @else
+            @php
+                $module_names = [];
+                foreach ($modules as $m) { $module_names[$m->id] = $m->name; }
+                $node_names = [];
+                foreach ($process_nodes as $pn) { $node_names[$pn->id] = $pn->name; }
+            @endphp
             <table class="member-table">
                 <tr>
                     <th>名称</th>
                     <th>描述</th>
+                    <th>流程节点</th>
+                    <th>关联模块</th>
                 </tr>
                 @foreach ($project_roles as $r)
                 <tr>
                     <td><strong>{{ $r->name }}</strong></td>
                     <td style="color: #666;">{{ $r->description or '-' }}</td>
+                    <td>{{ $node_names[$r->process_node_id] ?? '-' }}</td>
+                    <td>
+                        @php
+                            $modIds = $role_modules[$r->id] ?? [];
+                            $modNames = [];
+                            foreach ($modIds as $mid) { if (isset($module_names[$mid])) { $modNames[] = $module_names[$mid]; } }
+                            echo implode(', ', $modNames) ?: '-';
+                        @endphp
+                    </td>
                 </tr>
                 @endforeach
             </table>
@@ -281,6 +306,15 @@ $project_roles = $project_roles ?? [];
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>流程名称 *</label><input type="text" class="form-control" name="name" required></div>
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
+                <div class="form-group">
+                    <label>发起角色</label>
+                    <select class="form-control" name="initiator_role_id">
+                        <option value="0">不指定</option>
+                        @foreach ($project_roles as $r)
+                        <option value="{{ $r->id }}">{{ $r->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('processModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
             </form>
         </div>
@@ -296,6 +330,15 @@ $project_roles = $project_roles ?? [];
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>角色名称 *</label><input type="text" class="form-control" name="name" required placeholder="如：顾客、商品运营"></div>
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description" placeholder="角色职责说明"></textarea></div>
+                <div class="form-group">
+                    <label>关联流程节点</label>
+                    <select class="form-control" name="process_node_id">
+                        <option value="0">不关联</option>
+                        @foreach ($process_nodes as $pn)
+                        <option value="{{ $pn->id }}">{{ $pn->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
             </form>
         </div>
