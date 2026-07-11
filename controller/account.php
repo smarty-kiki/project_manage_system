@@ -451,7 +451,7 @@ if_post('/api/team/member/remove', function () {
         'user_id' => $member_user_id,
     ]);
 
-    if ($member->is_not_null() && $member->is_deleted()) {
+    if ($member->is_not_null() && $member->is_not_deleted()) {
         $member->delete();
     }
 
