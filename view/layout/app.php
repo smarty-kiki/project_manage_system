@@ -63,7 +63,7 @@
         .sidebar-header { font-size: 16px; font-weight: 600; padding: 12px 20px; color: #1890ff; cursor: pointer; }
         .sidebar-header:hover { color: #40a9ff; }
         .sidebar-item .icon { margin-right: 10px; font-size: 15px; width: 18px; text-align: center; }
-        .project-item { padding: 8px 20px; color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .project-item { display: block; padding: 8px 20px; color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .project-item:hover { color: #1890ff; }
         .project-item.active { color: #1890ff; background: #e6f7ff; }
         .sidebar-new-project { margin: 8px 12px; padding-top: 8px; border-top: 1px solid #f0f0f0; }
