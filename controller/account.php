@@ -143,12 +143,14 @@ if_get('/account/team', function () {
     }
 
     $teams = get_user_teams($user_id);
+    $current_team = get_current_team();
 
     return render('account/team_list', [
         'title' => '我的团队',
         'user' => $user,
         'user_teams' => $teams,
         'teams' => $teams,
+        'current_team' => $current_team,
     ]);
 });
 
