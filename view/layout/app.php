@@ -124,7 +124,6 @@
                 <div class="team-dropdown-divider"></div>
                 @endif
                 <a href="/account/team/create">新建团队</a>
-                <a href="/account/team">加入团队</a>
             </div>
         </div>
         @elseif (isset($user_teams) && !empty($user_teams) && count($user_teams) > 0)
@@ -136,7 +135,6 @@
                 @endforeach
                 <div class="team-dropdown-divider"></div>
                 <a href="/account/team/create">新建团队</a>
-                <a href="/account/team">加入团队</a>
             </div>
         </div>
         </div>
