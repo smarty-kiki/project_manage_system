@@ -11,6 +11,29 @@ function get_current_team_id(): ?int
     return $team_id ? (int)$team_id : null;
 }
 
+function get_current_team()
+{
+    $team_id = get_current_team_id();
+    if (!$team_id) {
+        return null_entity();
+    }
+
+    $team = dao('team')->find_by_id($team_id);
+    if ($team->is_null() || $team->is_deleted()) {
+        setcookie('current_team_id', '', time() - 3600, '/');
+        return null_entity();
+    }
+
+    $user_id = get_current_user_id();
+    $role = get_user_team_role($team_id, $user_id);
+    if ($role === null) {
+        setcookie('current_team_id', '', time() - 3600, '/');
+        return null_entity();
+    }
+
+    return $team;
+}
+
 function set_current_team_id(int $team_id): void
 {
     setcookie('current_team_id', (string)$team_id, time() + 86400 * 30, '/');
@@ -23,12 +46,17 @@ function require_team_context()
         return $redirect;
     }
 
+    $user_id = get_current_user_id();
+
+    if (!user_has_any_team($user_id)) {
+        return redirect('/account/team/create');
+    }
+
     $team_id = get_current_team_id();
     if (!$team_id) {
         return redirect('/account/team');
     }
 
-    $user_id = get_current_user_id();
     $role = get_user_team_role($team_id, $user_id);
     if ($role === null) {
         setcookie('current_team_id', '', time() - 3600, '/');
@@ -70,4 +98,19 @@ function get_default_redirect_after_login(int $user_id): string
     }
 
     return '/account/team';
+}
+
+function user_has_any_team(int $user_id): bool
+{
+    $members = dao('team_member')->find_all_by_column(['user_id' => $user_id]);
+    foreach ($members as $member) {
+        if ($member->is_deleted()) {
+            continue;
+        }
+        $team = dao('team')->find_by_id($member->team_id);
+        if ($team->is_not_null() && $team->is_not_deleted()) {
+            return true;
+        }
+    }
+    return false;
 }

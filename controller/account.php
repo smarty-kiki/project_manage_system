@@ -38,11 +38,17 @@ if_get('/account/team', function () {
 
     $user_id = get_current_user_id();
     $user = dao('team_account')->find_by_id($user_id);
+
+    if (!user_has_any_team($user_id)) {
+        return redirect('/account/team/create');
+    }
+
     $teams = get_user_teams($user_id);
 
     return render('account/team_list', [
         'title' => '我的团队',
         'user' => $user,
+        'user_teams' => $teams,
         'teams' => $teams,
     ]);
 });
@@ -53,10 +59,12 @@ if_get('/account/team/create', function () {
     if ($redirect) return $redirect;
 
     $user = dao('team_account')->find_by_id(get_current_user_id());
+    $user_teams = get_user_teams($user->id);
 
     return render('account/team_create', [
         'title' => '创建团队',
         'user' => $user,
+        'user_teams' => $user_teams,
     ]);
 });
 
@@ -74,6 +82,7 @@ if_get('/account/team/*', function ($team_id) {
     $user_id = get_current_user_id();
     $current_user_role = get_user_team_role($team_id, $user_id);
     $user = dao('team_account')->find_by_id($user_id);
+    $user_teams = get_user_teams($user_id);
 
     return render('account/team_detail', [
         'title' => $team->name,
@@ -81,6 +90,7 @@ if_get('/account/team/*', function ($team_id) {
         'members' => $members,
         'current_user_role' => $current_user_role,
         'user' => $user,
+        'user_teams' => $user_teams,
     ]);
 });
 
@@ -107,6 +117,7 @@ if_get('/account/team/*/member', function ($team_id) {
 
     $members = get_team_members($team_id);
     $user = dao('team_account')->find_by_id(get_current_user_id());
+    $user_teams = get_user_teams($user->id);
 
     return render('account/team_member', [
         'title' => '成员管理 - ' . $team->name,
@@ -114,6 +125,7 @@ if_get('/account/team/*/member', function ($team_id) {
         'members' => $members,
         'is_creator' => true,
         'user' => $user,
+        'user_teams' => $user_teams,
     ]);
 });
 

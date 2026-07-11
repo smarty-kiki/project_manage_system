@@ -113,15 +113,13 @@
 <nav class="top-navbar">
     <a href="/" class="navbar-logo">PMS</a>
     <div class="navbar-primary">
-        <a href="/account/team" class="{{ strpos(server('REQUEST_URI'), '/account/team') === 0 ? 'active' : '' }}">团队</a>
-        @if (isset($current_team) && isset($current_team->id))
+        <a href="{{ isset($current_team) && $current_team->is_not_null() ? '/team/' . $current_team->id . '/dashboard' : '/account/team' }}" class="{{ strpos(server('REQUEST_URI'), '/account/team') === 0 || strpos(server('REQUEST_URI'), '/team') === 0 ? 'active' : '' }}">团队</a>
+        @if (isset($current_team) && $current_team->is_not_null())
         <a href="/team/{{ $current_team->id }}/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
-        @else
-        <a href="/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
         @endif
     </div>
     <div class="navbar-user" style="margin-left:auto;">
-        @if (isset($current_team) && isset($current_team->id))
+        @if (isset($current_team) && $current_team->is_not_null())
         <div class="navbar-team-switcher" id="teamSwitcher">
             <span class="current-team-name" onclick="toggleTeamDropdown()">{{ $current_team->name }} &#9662;</span>
             @if (!empty($switchable_teams) && count($switchable_teams) > 0)
@@ -133,6 +131,17 @@
                 <a href="/account/team">查看所有团队</a>
             </div>
             @endif
+        </div>
+        @elseif (isset($user_teams) && !empty($user_teams) && count($user_teams) > 0)
+        <div class="navbar-team-switcher" id="teamSwitcher">
+            <span class="current-team-name" onclick="toggleTeamDropdown()">切换团队 &#9662;</span>
+            <div class="team-dropdown" id="teamDropdown" style="display:none;">
+                @foreach ($user_teams as $t)
+                <a href="#" onclick="switchTeam({{ $t->id }}); return false;">{{ $t->name }}</a>
+                @endforeach
+                <div class="team-dropdown-divider"></div>
+                <a href="/account/team">查看所有团队</a>
+            </div>
         </div>
         @endif
         <span class="user-name">{{ $user->name or '用户' }}</span>

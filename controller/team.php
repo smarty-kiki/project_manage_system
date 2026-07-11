@@ -22,6 +22,7 @@ if_get('/team/*/dashboard', function ($team_id) {
     $user = dao('team_account')->find_by_id($user_id);
     $members = get_team_members($team_id);
     $switchable_teams = get_switchable_teams($user_id, (int)$team_id);
+    $user_teams = get_user_teams($user_id);
     $creator = dao('team_account')->find_by_id($team->creator_id);
 
     return render('team/dashboard', [
@@ -32,6 +33,7 @@ if_get('/team/*/dashboard', function ($team_id) {
         'current_user_role' => $role,
         'current_team' => $team,
         'switchable_teams' => $switchable_teams,
+        'user_teams' => $user_teams,
         'creator' => $creator,
     ]);
 });
