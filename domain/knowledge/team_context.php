@@ -15,20 +15,20 @@ function get_current_team()
 {
     $team_id = get_current_team_id();
     if (!$team_id) {
-        return null_entity();
+        return new null_entity();
     }
 
     $team = dao('team')->find_by_id($team_id);
     if ($team->is_null() || $team->is_deleted()) {
         setcookie('current_team_id', '', time() - 3600, '/');
-        return null_entity();
+        return new null_entity();
     }
 
     $user_id = get_current_user_id();
     $role = get_user_team_role($team_id, $user_id);
     if ($role === null) {
         setcookie('current_team_id', '', time() - 3600, '/');
-        return null_entity();
+        return new null_entity();
     }
 
     return $team;

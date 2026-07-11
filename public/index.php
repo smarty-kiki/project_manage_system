@@ -65,8 +65,10 @@ function require_user_team_or_redirect($action, $args)
         '/account/logout',
         '/team/*/member',
         '/team/*/project',
+        '/team/*/project/*',
         '/api/project/list',
         '/api/project/create',
+        '/api/project/detail',
     ];
 
     $current_route = matched_rule();

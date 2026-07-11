@@ -17,7 +17,7 @@ $secondary_items = [];
 @else
 <div class="team-grid">
     @foreach ($project_list as $p)
-    <a href="#" class="team-card" onclick="alert('项目详情页开发中'); return false;">
+    <a href="/team/{{ $team->id }}/project/{{ $p->id }}" class="team-card">
         <h3>{{ $p->name }}</h3>
         <p>{{ $p->description or '暂无描述' }}</p>
         <div class="meta">创建于 {{ $p->create_time }}</div>

@@ -170,7 +170,7 @@
             @if (isset($team) && $team->is_not_null())
             @if (isset($projects))
                 @foreach ($projects as $p)
-                <a href="#" class="project-item" onclick="alert('项目详情页开发中'); return false;">{{ $p->name }}</a>
+                <a href="/team/{{ $team->id }}/project/{{ $p->id }}" class="project-item {{ (isset($current_project_id) && $current_project_id == $p->id) ? 'active' : '' }}">{{ $p->name }}</a>
                 @endforeach
             @endif
             <div class="sidebar-new-project">
