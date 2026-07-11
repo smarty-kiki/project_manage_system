@@ -6,7 +6,7 @@
         <h1>让项目管理回归简单</h1>
         <p>从一句话需求开始，经过业务流程设计、系统模块设计，再到多系统拆分。项目管理全流程，一个平台搞定。</p>
         <div class="hero-actions">
-            <a href="/account/register" class="btn btn-primary btn-lg">免费开始</a>
+            <a href="/account/enter" class="btn btn-primary btn-lg">免费开始</a>
             <a href="#features" class="btn btn-outline btn-lg">了解更多</a>
         </div>
     </div>
@@ -83,8 +83,8 @@
 <section class="cta">
     <div class="container">
         <h2>准备好开始了吗？</h2>
-        <p>注册即可使用，无需信用卡，永久免费版可用</p>
-        <a href="/account/register" class="btn btn-primary btn-lg">立即注册</a>
+        <p>输入邮箱即可开始使用，无需记住密码</p>
+        <a href="/account/enter" class="btn btn-primary btn-lg">免费开始</a>
     </div>
 </section>
 

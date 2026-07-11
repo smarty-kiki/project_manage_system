@@ -1,5 +1,20 @@
 <?php
 
+function require_user_name()
+{
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return redirect('/account/enter');
+    }
+
+    $user = dao('team_account')->find_by_id($user_id);
+    if ($user->is_not_null() && empty($user->name)) {
+        return redirect('/account/set_name');
+    }
+
+    return null;
+}
+
 function get_current_user_id(): ?int
 {
     $user_id = cookie('user_id');

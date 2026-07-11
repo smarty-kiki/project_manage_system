@@ -38,7 +38,7 @@
                     @foreach ($members as $member)
                         @php $user = dao('team_account')->find_by_id($member->user_id); @endphp
                         <tr>
-                            <td>{{ $user->nickname or $user->email }}</td>
+                            <td>{{ $user->name or $user->email }}</td>
                             <td>{{ $user->email }}</td>
                             <td>
                                 @if ($member->role === 'creator')

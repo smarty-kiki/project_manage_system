@@ -78,8 +78,7 @@
         <div class="navbar-logo">PMS</div>
         <div class="navbar-links">
             <a href="#features">功能</a>
-            <a href="/account/register">注册</a>
-            <a href="/account/login">登录</a>
+            <a href="/account/enter">登录 / 注册</a>
         </div>
     </div>
 </nav>

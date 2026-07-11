@@ -5,19 +5,19 @@ class team_account extends entity
     public $structs = [
         'email' => '',
         'password_hash' => '',
-        'nickname' => '',
+        'name' => '',
         'avatar' => '',
         'phone' => '',
         'status' => 1,
         'role' => 'user',
     ];
 
-    public static function create($email, $nickname = ''): team_account
+    public static function create($email, $name = ''): team_account
     {
         $account = parent::init();
 
         $account->email = $email;
-        $account->nickname = $nickname ?: explode('@', $email)[0];
+        $account->name = $name;
         $account->status = 1;
         $account->role = 'user';
 

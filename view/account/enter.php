@@ -14,14 +14,9 @@
                 <label>邮箱地址</label>
                 <input type="email" name="email" class="form-control" placeholder="请输入邮箱" required id="emailInput">
             </div>
-            <div class="form-group">
-                <label>昵称（注册时填写）</label>
-                <input type="text" name="nickname" class="form-control" placeholder="请输入昵称（注册时填写）" id="nicknameInput">
-            </div>
             <button type="submit" class="btn btn-primary" style="width:100%" id="sendCodeBtn">获取验证码</button>
         </form>
         <form method="post" action="/api/account/verify_code" id="verifyCodeForm" class="mt-16">
-            <input type="hidden" name="type" id="formType" value="login">
             <div class="form-group">
                 <label>验证码</label>
                 <div class="flex gap-8">
@@ -29,10 +24,10 @@
                     <button type="button" class="btn btn-default" id="resendBtn" style="width:120px;flex-shrink:0;" disabled>重新发送</button>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%" id="submitBtn">登录</button>
+            <button type="submit" class="btn btn-primary" style="width:100%" id="submitBtn">进入</button>
         </form>
         <div class="auth-footer">
-            <p id="formHint">还没有账号？<a href="/account/register">立即注册</a></p>
+            <p style="color:#999;font-size:13px;">输入邮箱并验证即可自动创建账号或登录</p>
         </div>
     </div>
 </div>
@@ -43,21 +38,11 @@
     var verifyCodeForm = document.getElementById('verifyCodeForm');
     var emailInput = document.getElementById('emailInput');
     var codeInput = document.getElementById('codeInput');
-    var formType = document.getElementById('formType');
     var sendCodeBtn = document.getElementById('sendCodeBtn');
     var submitBtn = document.getElementById('submitBtn');
     var resendBtn = document.getElementById('resendBtn');
-    var formHint = document.getElementById('formHint');
-    var nicknameInput = document.getElementById('nicknameInput');
 
     var countdown = 0;
-    var isRegister = {{ $is_register ? 'true' : 'false' }};
-
-    if (isRegister) {
-        formType.value = 'register';
-        submitBtn.textContent = '注册并登录';
-        formHint.innerHTML = '已有账号？<a href="/account/login">立即登录</a>';
-    }
 
     sendCodeForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -70,7 +55,7 @@
         fetch('/api/account/send_code', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'email=' + encodeURIComponent(email) + '&type=' + encodeURIComponent(formType.value) + '&nickname=' + encodeURIComponent(nicknameInput.value)
+            body: 'email=' + encodeURIComponent(email)
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -102,7 +87,7 @@
         fetch('/api/account/verify_code', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code) + '&type=' + encodeURIComponent(formType.value) + '&nickname=' + encodeURIComponent(nicknameInput.value)
+            body: 'email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code)
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -111,13 +96,13 @@
             } else {
                 alert(data.msg || '验证失败');
                 submitBtn.disabled = false;
-                submitBtn.textContent = '登录';
+                submitBtn.textContent = '进入';
             }
         })
         .catch(function() {
             alert('网络错误');
             submitBtn.disabled = false;
-            submitBtn.textContent = '登录';
+            submitBtn.textContent = '进入';
         });
     });
 
