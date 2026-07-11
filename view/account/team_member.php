@@ -31,9 +31,7 @@ $secondary_items = [
                     <th>邮箱</th>
                     <th>角色</th>
                     <th>加入时间</th>
-                    @if ($is_creator)
-                        <th>操作</th>
-                    @endif
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -50,11 +48,17 @@ $secondary_items = [
                             @endif
                         </td>
                         <td>{{ $member->joined_time }}</td>
-                        @if ($is_creator && $member->role !== 'admin')
+                        @if ($is_admin && $member->role !== 'admin')
                             <td>
                                 <button class="btn btn-default btn-sm" onclick="grantAdmin({{ $member->user_id }})">授权管理员</button>
                                 <button class="btn btn-danger btn-sm" onclick="removeMember({{ $member->user_id }})">移除</button>
                             </td>
+                        @elseif ((int)$member->user_id === (int)$user->id)
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="leaveTeam()">退出团队</button>
+                            </td>
+                        @else
+                            <td></td>
                         @endif
                     </tr>
                 @endforeach
@@ -229,6 +233,42 @@ window.restoreInviteModal = function() {
     document.getElementById('inviteEmail').value = '';
     document.getElementById('inviteError').style.display = 'none';
     document.getElementById('inviteSuccess').style.display = 'none';
+};
+
+window.leaveTeam = function() {
+    var modal = document.getElementById('inviteModal');
+    var cardBody = modal.querySelector('.card-body');
+    modal.style.display = 'flex';
+    cardBody.innerHTML = '<p style="margin-bottom:16px;">确定要退出该团队吗？</p>' +
+        '<div class="flex gap-8" style="justify-content:flex-end">' +
+        '<button class="btn btn-default" onclick="restoreInviteModal()">取消</button>' +
+        '<button class="btn btn-danger" onclick="confirmLeave()">确认退出</button>' +
+        '</div>';
+};
+
+window.confirmLeave = function() {
+    var btn = document.querySelector('#confirmInviteBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '处理中...'; }
+
+    fetch('/api/team/member/leave', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+        body: 'team_id=' + encodeURIComponent(currentTeamId)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.code === 0) {
+            closeInviteModal();
+            window.location.href = '/account/team';
+        } else {
+            showPageError(data.msg || '退出失败');
+            restoreInviteModal();
+        }
+    })
+    .catch(function() {
+        showPageError('网络错误');
+        restoreInviteModal();
+    });
 };
 
 window.removeMember = function(userId) {

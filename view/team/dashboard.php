@@ -25,7 +25,7 @@ $secondary_items = [
     </div>
     <div class="card flex-1" style="min-width:200px;">
         <div class="card-body text-center">
-            <div style="font-size:32px;font-weight:700;color:#52c41a;">{{ $creator->name or '--' }}</div>
+            <div style="font-size:32px;font-weight:700;color:#52c41a;">{{ $admin_count }}</div>
             <div style="color:#999;margin-top:4px;">管理员</div>
         </div>
     </div>

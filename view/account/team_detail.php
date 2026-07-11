@@ -12,7 +12,7 @@ $secondary_items = [
         <p style="color:#999;margin-top:4px">{{ $team->description or '暂无描述' }}</p>
     </div>
     <div class="flex gap-8">
-        @if (!empty($current_user_role) && $current_user_role === 'creator')
+        @if (!empty($current_user_role) && $current_user_role === 'admin')
             <a href="/team/{{ $team->id }}/member" class="btn btn-default btn-sm">成员管理</a>
         @endif
     </div>

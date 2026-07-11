@@ -334,7 +334,7 @@ if_post('/api/team/invite', function () {
         otherwise_error_code('TEAM_NOT_FOUND', false);
     }
 
-    if ($team->creator_id != $user_id) {
+    if (get_user_team_role($team_id, $user_id) !== 'admin') {
         otherwise_error_code('NOT_TEAM_CREATOR', false);
     }
 
@@ -394,7 +394,7 @@ if_post('/api/team/member/remove', function () {
         otherwise_error_code('TEAM_NOT_FOUND', false);
     }
 
-    if ($team->creator_id != $user_id) {
+    if (get_user_team_role($team_id, $user_id) !== 'admin') {
         otherwise_error_code('NOT_TEAM_CREATOR', false);
     }
 
@@ -433,7 +433,7 @@ if_post('/api/team/member/grant_admin', function () {
         otherwise_error_code('TEAM_NOT_FOUND', false);
     }
 
-    if ($team->creator_id != $user_id) {
+    if (get_user_team_role($team_id, $user_id) !== 'admin') {
         otherwise_error_code('NOT_TEAM_CREATOR', false);
     }
 
@@ -449,6 +449,48 @@ if_post('/api/team/member/grant_admin', function () {
     $member->role = 'admin';
 
     return ['message' => '已授权为管理员'];
+});
+
+// API: Leave team
+if_post('/api/team/member/leave', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+
+    $team_id = input('team_id', '');
+
+    if (all_empty($team_id)) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'team_id']);
+    }
+
+    $team = dao('team')->find_by_id($team_id);
+    if ($team->is_null()) {
+        otherwise_error_code('TEAM_NOT_FOUND', false);
+    }
+
+    $member = dao('team_member')->find_by_column([
+        'team_id' => $team_id,
+        'user_id' => $user_id,
+    ]);
+
+    if ($member->is_null() || $member->is_deleted()) {
+        otherwise_error_code('TEAM_MEMBER_NOT_FOUND', false);
+    }
+
+    if ($member->role === 'admin') {
+        $admins = dao('team_member')->find_all_by_column([
+            'team_id' => $team_id,
+            'role' => 'admin',
+        ]);
+        if (count($admins) <= 1) {
+            otherwise_error_code('LAST_ADMIN_CANNOT_LEAVE', false);
+        }
+    }
+
+    $member->delete();
+
+    return ['message' => '已退出团队'];
 });
 
 // API: Get team members

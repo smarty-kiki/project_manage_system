@@ -21,7 +21,12 @@ if_get('/team/*/dashboard', function ($team_id) {
     $members = get_team_members($team_id);
     $switchable_teams = get_switchable_teams($user_id, (int)$team_id);
     $user_teams = get_user_teams($user_id);
-    $creator = dao('team_account')->find_by_id($team->creator_id);
+    $admin_count = 0;
+    foreach ($members as $m) {
+        if ($m->role === 'admin') {
+            $admin_count++;
+        }
+    }
 
     return render('team/dashboard', [
         'title' => $team->name . ' - 工作台',
@@ -32,7 +37,7 @@ if_get('/team/*/dashboard', function ($team_id) {
         'current_team' => $team,
         'switchable_teams' => $switchable_teams,
         'user_teams' => $user_teams,
-        'creator' => $creator,
+        'admin_count' => $admin_count,
     ]);
 });
 
@@ -53,15 +58,15 @@ if_get('/team/*/member', function ($team_id) {
 
     set_current_team_id($team_id);
 
-    $is_creator = $team->creator_id == get_current_user_id();
-    if (!$is_creator) {
+    $is_admin = get_user_team_role($team_id, get_current_user_id()) === 'admin';
+    if (!$is_admin) {
         return render('account/team_detail', [
             'title' => $team->name,
             'team' => $team,
             'members' => get_team_members($team_id),
             'current_user_role' => $role,
             'current_team' => $team,
-            'error' => '只有团队创建者可以管理成员',
+            'error' => config('error_code')['NOT_TEAM_CREATOR'],
         ]);
     }
 
@@ -73,7 +78,7 @@ if_get('/team/*/member', function ($team_id) {
         'title' => '成员管理 - ' . $team->name,
         'team' => $team,
         'members' => $members,
-        'is_creator' => true,
+        'is_admin' => true,
         'user' => $user,
         'user_teams' => $user_teams,
         'current_team' => $team,
