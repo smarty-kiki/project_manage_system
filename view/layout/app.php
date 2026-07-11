@@ -116,15 +116,18 @@
         @if (isset($current_team) && $current_team->is_not_null())
         <div class="navbar-team-switcher" id="teamSwitcher">
             <span class="current-team-name" onclick="toggleTeamDropdown()">{{ $current_team->name }} &#9662;</span>
-            @if (!empty($switchable_teams) && count($switchable_teams) > 0)
             <div class="team-dropdown" id="teamDropdown" style="display:none;">
+                @if (!empty($switchable_teams) && count($switchable_teams) > 0)
                 @foreach ($switchable_teams as $t)
                 <a href="#" onclick="switchTeam({{ $t->id }}); return false;">{{ $t->name }}</a>
                 @endforeach
                 <div class="team-dropdown-divider"></div>
+                @endif
                 <a href="/account/team">查看所有团队</a>
+                <div class="team-dropdown-divider"></div>
+                <a href="/account/team/create">新建团队</a>
+                <a href="/account/team">加入团队</a>
             </div>
-            @endif
         </div>
         @elseif (isset($user_teams) && !empty($user_teams) && count($user_teams) > 0)
         <div class="navbar-team-switcher" id="teamSwitcher">
@@ -135,7 +138,11 @@
                 @endforeach
                 <div class="team-dropdown-divider"></div>
                 <a href="/account/team">查看所有团队</a>
+                <div class="team-dropdown-divider"></div>
+                <a href="/account/team/create">新建团队</a>
+                <a href="/account/team">加入团队</a>
             </div>
+        </div>
         </div>
         @else
         <a href="/account/team/create" class="{{ strpos(server('REQUEST_URI'), '/account/team') === 0 ? 'active' : '' }}">切换团队</a>
