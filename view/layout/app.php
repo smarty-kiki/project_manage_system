@@ -159,9 +159,6 @@
 
 <div class="app-layout">
     <aside class="sidebar">
-        @if (isset($user) && $user->is_not_null())
-        <a href="/account/detail" class="sidebar-header">{{ $user->name or '用户' }}</a>
-        @endif
         @if ($secondary_items or false)
             @foreach ($secondary_items as $item)
                 <a href="{{ $item['href'] }}" class="sidebar-item {{ (isset($item['active']) and $item['active']) ? 'active' : '' }}">
