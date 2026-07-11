@@ -1,6 +1,6 @@
-php-vibe-coding-frame.yao-yang.cn {
+project_manage_system.yao-yang.cn {
     tls 378031327@qq.com
-    root * /var/www/php-vibe-coding-frame/public
+    root * /var/www/project_manage_system/public
     encode gzip
     route /CLAUDE.md {
         respond 403

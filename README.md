@@ -1,4 +1,4 @@
-# php-vibe-coding-frame
+# project_manage_system
 
 单层 MVC PHP 框架，专为 PHP-FPM 快速开发设计。无 DI 容器、无注解、无 YAML 路由配置、无 Composer autoload——路由即闭包，控制器即函数，写完即跑。
 
@@ -572,7 +572,7 @@ if_get('/admin/*', function ($id) {
 
 ## 与 Laravel 的关键差异
 
-| | php-vibe-coding-frame | Laravel |
+| | project_manage_system | Laravel |
 |------|------|------|
 | 路由 | 闭包直接注册在 `controller/*.php` | `routes/web.php` 指向 Controller 类方法 |
 | 控制器 | 闭包即控制器 | Controller 类 + 方法 |
