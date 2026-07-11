@@ -36,6 +36,48 @@ if_get('/team/*/dashboard', function ($team_id) {
     ]);
 });
 
+// Team member management page
+if_get('/team/*/member', function ($team_id) {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $team = dao('team')->find_by_id($team_id);
+    if ($team->is_null()) {
+        return render('error/404');
+    }
+
+    $role = get_user_team_role($team_id, get_current_user_id());
+    if ($role === null) {
+        return redirect('/account/team');
+    }
+
+    set_current_team_id($team_id);
+
+    $is_creator = $team->creator_id == get_current_user_id();
+    if (!$is_creator) {
+        return render('account/team_detail', [
+            'title' => $team->name,
+            'team' => $team,
+            'members' => get_team_members($team_id),
+            'current_user_role' => $role,
+            'error' => '只有团队创建者可以管理成员',
+        ]);
+    }
+
+    $members = get_team_members($team_id);
+    $user = dao('team_account')->find_by_id(get_current_user_id());
+    $user_teams = get_user_teams($user->id);
+
+    return render('account/team_member', [
+        'title' => '成员管理 - ' . $team->name,
+        'team' => $team,
+        'members' => $members,
+        'is_creator' => true,
+        'user' => $user,
+        'user_teams' => $user_teams,
+    ]);
+});
+
 // Switch current team
 if_post('/api/team/switch', function () {
     $user_id = get_current_user_id();

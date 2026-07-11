@@ -13,7 +13,7 @@ $secondary_items = [
     </div>
     <div class="flex gap-8">
         @if (!empty($current_user_role) && $current_user_role === 'creator')
-            <a href="/account/team/{{ $team->id }}/member" class="btn btn-default btn-sm">成员管理</a>
+            <a href="/team/{{ $team->id }}/member" class="btn btn-default btn-sm">成员管理</a>
         @endif
     </div>
 </div>

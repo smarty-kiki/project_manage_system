@@ -1,7 +1,7 @@
 @php
 $secondary_items = [
     ['label' => '总览', 'href' => '/team/' . $team->id . '/dashboard', 'icon' => '&#9633;', 'active' => true],
-    ['label' => '团队成员', 'href' => '/account/team/' . $team->id . '/member', 'icon' => '&#9783;'],
+    ['label' => '团队成员', 'href' => '/team/' . $team->id . '/member', 'icon' => '&#9783;'],
 ];
 @endphp
 @include('layout/app')
@@ -12,7 +12,7 @@ $secondary_items = [
         <p style="color:#999;margin-top:4px;">{{ $team->description or '暂无描述' }}</p>
     </div>
     @if ($current_user_role === 'creator')
-    <a href="/account/team/{{ $team->id }}/member" class="btn btn-primary">邀请成员</a>
+    <a href="/team/{{ $team->id }}/member" class="btn btn-primary">邀请成员</a>
     @endif
 </div>
 
@@ -50,7 +50,7 @@ $secondary_items = [
 <div class="card mt-16">
     <div class="card-header flex-between">
         <span>团队成员</span>
-        <a href="/account/team/{{ $team->id }}/member" style="font-size:13px;">查看全部 &rarr;</a>
+        <a href="/team/{{ $team->id }}/member" style="font-size:13px;">查看全部 &rarr;</a>
     </div>
     <div class="card-body" style="padding:0;">
         <table class="member-table">

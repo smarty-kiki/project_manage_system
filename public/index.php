@@ -63,6 +63,7 @@ function require_user_team_or_redirect($action, $args)
         '/api/team/create',
         '/api/team/list',
         '/account/logout',
+        '/team/*/member',
     ];
 
     $current_route = matched_rule();
