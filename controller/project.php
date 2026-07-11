@@ -148,7 +148,6 @@ if_get('/api/project/detail', function () {
         'description' => $project->description,
         'team_id' => $project->team_id,
         'creator_id' => $project->creator_id,
-        'status' => $project->status,
         'create_time' => (string)$project->create_time,
         'update_time' => (string)$project->update_time,
     ];

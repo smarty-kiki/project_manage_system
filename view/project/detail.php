@@ -15,10 +15,6 @@ $secondary_items = [];
         <div style="font-size: 18px; font-weight: 600; color: #333;">{{ $project->name }}</div>
     </div>
     <div class="card" style="padding: 16px 20px;">
-        <div style="color: #999; font-size: 13px; margin-bottom: 8px;">状态</div>
-        <div style="font-size: 18px; font-weight: 600; color: #52c41a;">运行中</div>
-    </div>
-    <div class="card" style="padding: 16px 20px;">
         <div style="color: #999; font-size: 13px; margin-bottom: 8px;">创建时间</div>
         <div style="font-size: 16px; font-weight: 600; color: #333;">{{ $project->create_time }}</div>
     </div>
@@ -60,10 +56,6 @@ $secondary_items = [];
                 <tr>
                     <td style="color: #999;">所属团队</td>
                     <td style="text-align: right;">{{ $team->name }}</td>
-                </tr>
-                <tr>
-                    <td style="color: #999;">项目状态</td>
-                    <td style="text-align: right;"><span style="color: #52c41a;">启用</span></td>
                 </tr>
                 <tr>
                     <td style="color: #999;">项目 ID</td>

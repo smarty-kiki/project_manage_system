@@ -7,7 +7,6 @@ class project extends entity
         'name' => '',
         'description' => '',
         'creator_id' => 0,
-        'status' => 1,
     ];
 
     public static function create($team_id, $name, $description, $creator_id): project
@@ -18,7 +17,6 @@ class project extends entity
         $project->name = $name;
         $project->description = $description;
         $project->creator_id = $creator_id;
-        $project->status = 1;
 
         return $project;
     }
