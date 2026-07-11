@@ -46,7 +46,7 @@
         /* Top navbar */
         .top-navbar { height: 48px; background: #001529; display: flex; align-items: center; padding: 0 20px; position: sticky; top: 0; z-index: 100; }
         .navbar-logo { font-size: 16px; font-weight: 700; color: #fff; margin-right: 32px; }
-        .navbar-primary { display: flex; gap: 4px; flex: 1; }
+        .navbar-primary { display: flex; gap: 4px; flex: 1; align-items: center; }
         .navbar-primary a { color: rgba(255,255,255,.65); padding: 8px 16px; border-radius: 4px; font-size: 14px; }
         .navbar-primary a:hover, .navbar-primary a.active { color: #fff; background: #1890ff; }
         .navbar-user { display: flex; align-items: center; gap: 16px; color: rgba(255,255,255,.65); font-size: 14px; }
@@ -83,7 +83,7 @@
 
         /* Team switcher */
         .navbar-team-switcher { position: relative; margin-right: 8px; }
-        .current-team-name { color: #fff; cursor: pointer; padding: 4px 10px; border-radius: 4px; font-size: 13px; background: rgba(255,255,255,.1); display: inline-block; user-select: none; }
+        .current-team-name { color: #fff; cursor: pointer; padding: 6px 10px; border-radius: 4px; font-size: 13px; background: rgba(255,255,255,.1); display: inline-block; user-select: none; }
         .current-team-name:hover { background: rgba(255,255,255,.2); }
         .team-dropdown { position: absolute; top: 34px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.15); min-width: 160px; z-index: 200; padding: 4px 0; }
         .team-dropdown a { display: block; padding: 8px 16px; color: #333; font-size: 13px; white-space: nowrap; }
