@@ -90,6 +90,8 @@ if_not_found(function () {
 
 // init controller
 include CONTROLLER_DIR.'/base.php';
+include CONTROLLER_DIR.'/account.php';
+include CONTROLLER_DIR.'/team.php';
 
 // fix
 not_found();

@@ -3,7 +3,7 @@
 spl_autoload_register(function ($class_name) {
 
     $class_maps = [
-        'send_email' => 'mailer/autoload.php',
+        'send_email' => 'email.php',
     ];
 
     if (isset($class_maps[$class_name])) {

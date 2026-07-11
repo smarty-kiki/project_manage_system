@@ -1,10 +1,29 @@
 <?php
 
 return [
-    /**
-    'USER_NOT_FOUND' => 'user not found',
-    'INVALID_PARAM' => 'invalid parameter: {param}',
-    'PERMISSION_DENIED' => 'permission denied',
-    'DB_ERROR' => 'database operation failed',
-     */
+    'EMAIL_SEND_FAILED' => '邮件发送失败，请稍后重试',
+    'EMAIL_NOT_CONFIGURED' => '邮件服务未配置，请联系管理员',
+    'VERIFICATION_CODE_SENT' => '验证码已发送，请查收邮件',
+    'VERIFICATION_CODE_INVALID' => '验证码无效或已过期',
+    'VERIFICATION_CODE_MISMATCH' => '验证码错误',
+    'VERIFICATION_CODE_REQUIRED' => '请输入验证码',
+    'EMAIL_REQUIRED' => '请输入邮箱地址',
+    'EMAIL_INVALID' => '邮箱格式不正确',
+    'EMAIL_NOT_REGISTERED' => '该邮箱尚未注册',
+    'EMAIL_ALREADY_REGISTERED' => '该邮箱已注册',
+    'CODE_SEND_TOO_FREQUENT' => '验证码发送过于频繁，请{seconds}秒后再试',
+    'NICKNAME_REQUIRED' => '请输入昵称',
+    'LOGIN_SUCCESS' => '登录成功',
+    'LOGOUT_SUCCESS' => '已退出登录',
+    'REGISTER_SUCCESS' => '注册成功',
+    'TEAM_NAME_REQUIRED' => '请输入团队名称',
+    'TEAM_CREATE_SUCCESS' => '团队创建成功',
+    'TEAM_NOT_FOUND' => '团队不存在',
+    'TEAM_INVITE_SENT' => '邀请已发送',
+    'TEAM_MEMBER_ADDED' => '成员已加入团队',
+    'TEAM_MEMBER_ALREADY_EXISTS' => '该用户已是团队成员',
+    'NOT_TEAM_CREATOR' => '只有团队创建者可以管理成员',
+    'USER_NOT_FOUND' => '用户不存在',
+    'PERMISSION_DENIED' => '没有权限访问该资源',
+    'INVALID_REQUEST' => '无效的请求',
 ];
