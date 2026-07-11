@@ -60,6 +60,7 @@ if_get('/team/*/member', function ($team_id) {
             'team' => $team,
             'members' => get_team_members($team_id),
             'current_user_role' => $role,
+            'current_team' => $team,
             'error' => '只有团队创建者可以管理成员',
         ]);
     }
@@ -75,6 +76,7 @@ if_get('/team/*/member', function ($team_id) {
         'is_creator' => true,
         'user' => $user,
         'user_teams' => $user_teams,
+        'current_team' => $team,
     ]);
 });
 
