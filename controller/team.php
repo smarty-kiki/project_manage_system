@@ -2,10 +2,8 @@
 
 // Team dashboard
 if_get('/team/*/dashboard', function ($team_id) {
-    $redirect = require_team_context();
-    if ($redirect) return $redirect;
-
     $user_id = get_current_user_id();
+
     $role = get_user_team_role($team_id, $user_id);
     if ($role === null) {
         return redirect('/account/team');

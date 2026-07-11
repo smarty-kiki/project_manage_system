@@ -113,12 +113,6 @@
 <nav class="top-navbar">
     <a href="/" class="navbar-logo">PMS</a>
     <div class="navbar-primary">
-        <a href="{{ isset($current_team) && $current_team->is_not_null() ? '/team/' . $current_team->id . '/dashboard' : '/account/team' }}" class="{{ strpos(server('REQUEST_URI'), '/account/team') === 0 || strpos(server('REQUEST_URI'), '/team') === 0 ? 'active' : '' }}">团队</a>
-        @if (isset($current_team) && $current_team->is_not_null())
-        <a href="/team/{{ $current_team->id }}/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
-        @endif
-    </div>
-    <div class="navbar-user" style="margin-left:auto;">
         @if (isset($current_team) && $current_team->is_not_null())
         <div class="navbar-team-switcher" id="teamSwitcher">
             <span class="current-team-name" onclick="toggleTeamDropdown()">{{ $current_team->name }} &#9662;</span>
@@ -143,7 +137,14 @@
                 <a href="/account/team">查看所有团队</a>
             </div>
         </div>
+        @else
+        <a href="/account/team/create" class="{{ strpos(server('REQUEST_URI'), '/account/team') === 0 ? 'active' : '' }}">切换团队</a>
         @endif
+        @if (isset($current_team) && $current_team->is_not_null())
+        <a href="/team/{{ $current_team->id }}/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
+        @endif
+    </div>
+    <div class="navbar-user" style="margin-left:auto;">
         <span class="user-name">{{ $user->name or '用户' }}</span>
         <a href="/account/logout">退出</a>
     </div>
