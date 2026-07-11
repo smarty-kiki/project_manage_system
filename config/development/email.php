@@ -1,15 +1,14 @@
 <?php
 
 return [
-    'driver' => 'log',
-    'from' => 'noreply@localhost',
-    'from_name' => 'Project Manager',
-    'log_path' => '/tmp/email.log',
+    'driver' => 'smtp',
+    'from' => '378031327@qq.com',
+    'from_name' => '项目管理系统',
     'smtp' => [
-        'host' => '',
-        'port' => 25,
-        'username' => '',
-        'password' => '',
-        'encryption' => '',
+        'host' => 'smtp.qq.com',
+        'port' => 465,
+        'encryption' => 'ssl',
+        'username' => '378031327@qq.com',
+        'password' => 'svnvyobqcxlicaci',
     ],
 ];

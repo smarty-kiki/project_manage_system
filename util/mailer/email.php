@@ -39,7 +39,8 @@ function send_email_smtp($config, $to, $subject, $body)
     $username = $config['smtp']['username'] ?? '';
     $password = $config['smtp']['password'] ?? '';
     $encryption = $config['smtp']['encryption'] ?? '';
-    $from = $config['smtp']['from'] ?? ($username ?: 'noreply@localhost');
+    $from = $config['smtp']['from'] ?? $config['from'] ?? $username ?: 'noreply@localhost';
+    $from_name = $config['smtp']['from_name'] ?? $config['from_name'] ?? '';
 
     $crlf = "\r\n";
     $timeout = 10;
@@ -48,12 +49,9 @@ function send_email_smtp($config, $to, $subject, $body)
     $connect_port = $port;
 
     if ($encryption === 'ssl') {
-        if ($port === 25 || $port === 587) {
-            $connect_host = 'ssl://' . $host;
-            $connect_port = 465;
-        } else {
-            $connect_host = 'ssl://' . $host;
-        }
+        $connect_host = 'ssl://' . $host;
+    } elseif ($encryption === 'tls') {
+        $connect_host = 'tls://' . $host;
     }
 
     $socket = @fsockopen($connect_host, $connect_port, $errno, $errstr, $timeout);
@@ -65,18 +63,24 @@ function send_email_smtp($config, $to, $subject, $body)
 
     stream_set_timeout($socket, $timeout);
 
-    $read_line = function () use ($socket) {
-        $line = fgets($socket, 515);
-        $info = stream_get_meta_data($socket);
-        if ($info['timed_out']) {
-            return false;
+    $read_all = function () use ($socket) {
+        $lines = '';
+        while ($line = fgets($socket, 515)) {
+            $info = stream_get_meta_data($socket);
+            if ($info['timed_out']) {
+                return false;
+            }
+            $lines .= $line;
+            if (isset($line[3]) && $line[3] === ' ') {
+                break;
+            }
         }
-        return $line;
+        return $lines;
     };
 
-    $send_command = function ($command, $expected_code = 250) use ($socket, $read_line) {
+    $send_command = function ($command, $expected_code = 250) use ($socket, $read_all) {
         fwrite($socket, $command . "\r\n");
-        $response = $read_line();
+        $response = $read_all();
 
         if ($response === false) {
             return false;
@@ -86,24 +90,48 @@ function send_email_smtp($config, $to, $subject, $body)
         return $code === $expected_code;
     };
 
-    $read_line();
+    $read_all();
 
-    $send_command('EHLO localhost');
+    if (!$send_command('EHLO localhost')) {
+        $send_command('HELO localhost');
+    }
+
+    if (!empty($username) && !empty($password)) {
+        if (!$send_command('AUTH LOGIN', 334)) {
+            log_notice('email_smtp_auth_failed', 'smtp AUTH LOGIN not accepted');
+            fclose($socket);
+            return false;
+        }
+
+        if (!$send_command(base64_encode($username), 334)) {
+            log_notice('email_smtp_auth_failed', 'smtp username rejected');
+            fclose($socket);
+            return false;
+        }
+
+        if (!$send_command(base64_encode($password), 235)) {
+            log_notice('email_smtp_auth_failed', 'smtp password rejected');
+            fclose($socket);
+            return false;
+        }
+    }
+
     $send_command('MAIL FROM: <' . $from . '>');
     $send_command('RCPT TO: <' . $to . '>');
     $send_command('DATA');
 
-    $boundary = '----=_Part_' . uniqid();
-    $headers = "From: " . $from . $crlf;
+    $from_display = $from_name ? $from_name . ' <' . $from . '>' : $from;
+    $headers = "From: " . $from_display . $crlf;
     $headers .= "To: " . $to . $crlf;
-    $headers .= "Subject: " . $subject . $crlf;
+    $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=" . $crlf;
     $headers .= "Content-Type: text/plain; charset=utf-8" . $crlf;
+    $headers .= "Content-Transfer-Encoding: base64" . $crlf;
     $headers .= "MIME-Version: 1.0" . $crlf;
 
-    $message = $headers . $crlf . $body;
+    $message = $headers . $crlf . chunk_split(base64_encode($body));
 
     fwrite($socket, $message . "\r\n.\r\n");
-    $read_line();
+    $read_all();
 
     $send_command('QUIT', 221);
     fclose($socket);
