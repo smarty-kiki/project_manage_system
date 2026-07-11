@@ -2,6 +2,49 @@
 
 // Unified entry page (login/register merged)
 if_get('/account/enter', function () {
+    $team_id = input('invite', '');
+    $code = trim(input('code', ''));
+
+    if (!empty($team_id) && !empty($code)) {
+        $vc = dao('verification_code')->find_by_column([
+            'code' => $code,
+            'type' => 'team_invite_' . $team_id,
+            'used' => 0,
+        ]);
+
+        if ($vc->is_not_null() && !$vc->is_expired()) {
+            $email = $vc->email;
+            $user = dao('team_account')->find_by_column(['email' => $email]);
+
+            if ($user->is_null()) {
+                $user = team_account::create($email, '');
+            }
+
+            $vc->usage_time = datetime();
+            $vc->used = 1;
+
+            $existing = dao('team_member')->find_by_column([
+                'team_id' => $team_id,
+                'user_id' => $user->id,
+            ]);
+            if ($existing->is_null() || $existing->is_deleted()) {
+                if ($existing->is_not_null()) {
+                    $existing->restore();
+                } else {
+                    team_member::create($team_id, $user->id, 'member');
+                }
+            }
+
+            setcookie('user_id', (string)$user->id, time() + 86400 * 30, '/');
+
+            if (empty($user->name)) {
+                return redirect('/account/set_name');
+            }
+
+            return redirect('/team/' . $team_id . '/dashboard');
+        }
+    }
+
     if ($user_id = get_current_user_id()) {
         $user = dao('team_account')->find_by_id($user_id);
         if ($user->is_not_null() && !empty($user->name)) {
@@ -12,6 +55,7 @@ if_get('/account/enter', function () {
         }
         return redirect('/account/team');
     }
+
     return render('account/enter', [
         'title' => '进入系统',
     ]);
@@ -361,10 +405,10 @@ if_post('/api/team/invite', function () {
 
         $team = dao('team')->find_by_id($team_id);
         $subject = '邀请您加入团队：' . $team->name;
+        $invite_link = 'http://' . server('HTTP_HOST') . '/account/enter?invite=' . $team_id . '&code=' . $code;
         $body = "您被邀请加入团队「{$team->name}」。\n\n";
-        $body .= "请访问以下链接加入团队：\n";
-        $body .= "http://" . server('HTTP_HOST') . "/account/enter\n";
-        $body .= "注册时使用验证码：{$code}\n\n";
+        $body .= "点击以下链接直接加入：\n";
+        $body .= $invite_link . "\n\n";
         $body .= "如果您未收到邀请，请忽略此邮件。";
 
         send_email($email, $subject, $body);
