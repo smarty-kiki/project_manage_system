@@ -63,9 +63,7 @@
         .sidebar-header { font-size: 16px; font-weight: 600; padding: 12px 20px; color: #1890ff; cursor: pointer; }
         .sidebar-header:hover { color: #40a9ff; }
         .sidebar-item .icon { margin-right: 10px; font-size: 15px; width: 18px; text-align: center; }
-        .sidebar-team-name { font-size: 13px; font-weight: 600; padding: 12px 20px 6px; color: #333; border-top: 1px solid #f0f0f0; margin-top: 4px; }
-        .sidebar-team-name:first-child { border-top: none; margin-top: 0; }
-        .project-item { padding: 8px 20px 8px 30px; color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .project-item { padding: 8px 20px; color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .project-item:hover { color: #1890ff; }
         .project-item.active { color: #1890ff; background: #e6f7ff; }
         .sidebar-new-project { margin: 8px 12px; padding-top: 8px; border-top: 1px solid #f0f0f0; }
@@ -173,7 +171,6 @@
             @endforeach
         @else
             @if (isset($team) && $team->is_not_null())
-            <div class="sidebar-team-name">{{ $team->name }}</div>
             @if (isset($projects))
                 @foreach ($projects as $p)
                 <a href="#" class="project-item" onclick="alert('项目详情页开发中'); return false;">{{ $p->name }}</a>
