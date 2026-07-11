@@ -5,7 +5,10 @@ if_get('/account/enter', function () {
     if ($user_id = get_current_user_id()) {
         $user = dao('team_account')->find_by_id($user_id);
         if ($user->is_not_null() && !empty($user->name)) {
-            return redirect(get_default_redirect_after_login($user_id));
+            if (user_has_any_team($user_id)) {
+                return redirect(get_default_redirect_after_login($user_id));
+            }
+            return redirect('/account/team/create');
         }
         return redirect('/account/team');
     }

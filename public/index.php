@@ -41,7 +41,47 @@ if_has_exception(function ($ex) {
     }
 });
 
+function require_user_team_or_redirect($action, $args)
+{
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        return false;
+    }
+
+    if (user_has_any_team($user_id)) {
+        return false;
+    }
+
+    $no_team_routes = [
+        '/',
+        '/account/enter',
+        '/account/set_name',
+        '/account/team/create',
+        '/api/account/send_code',
+        '/api/account/verify_code',
+        '/api/account/set_name',
+        '/api/team/create',
+        '/api/team/list',
+        '/account/logout',
+    ];
+
+    $current_route = matched_rule();
+
+    foreach ($no_team_routes as $route) {
+        if ($current_route === $route || starts_with($current_route, $route . '/')) {
+            return false;
+        }
+    }
+
+    redirect('/account/team/create');
+    return true;
+}
+
 if_verify(function ($action, $args) {
+
+    if (require_user_team_or_redirect($action, $args)) {
+        return;
+    }
 
     return unit_of_work(function () use ($action, $args){
 
