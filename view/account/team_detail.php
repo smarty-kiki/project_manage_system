@@ -56,3 +56,6 @@ $secondary_items = [
         @endif
     </div>
 </div>
+
+@include('layout/app_footer')
+

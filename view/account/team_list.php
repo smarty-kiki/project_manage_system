@@ -14,7 +14,7 @@ $secondary_items = [
 @if (!empty($teams) && count($teams) > 0)
     <div class="team-grid">
         @foreach ($teams as $team)
-            <div class="team-card" onclick="location.href='/account/team/{{ $team->id }}'">
+            <div class="team-card" onclick="location.href='/team/{{ $team->id }}/dashboard'">
                 <h3>{{ $team->name }}</h3>
                 <p>{{ $team->description or '暂无描述' }}</p>
                 <div class="meta">
@@ -30,3 +30,5 @@ $secondary_items = [
         <a href="/account/team/create" class="btn btn-primary mt-16">创建第一个团队</a>
     </div>
 @endif
+
+@include('layout/app_footer')

@@ -210,3 +210,5 @@ document.getElementById('inviteModal').addEventListener('click', function(e) {
     if (e.target === this) closeInviteModal();
 });
 </script>
+
+@include('layout/app_footer')

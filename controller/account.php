@@ -2,7 +2,11 @@
 
 // Unified entry page (login/register merged)
 if_get('/account/enter', function () {
-    if (get_current_user_id()) {
+    if ($user_id = get_current_user_id()) {
+        $user = dao('team_account')->find_by_id($user_id);
+        if ($user->is_not_null() && !empty($user->name)) {
+            return redirect(get_default_redirect_after_login($user_id));
+        }
         return redirect('/account/team');
     }
     return render('account/enter', [
@@ -19,7 +23,7 @@ if_get('/account/set_name', function () {
 
     $user = dao('team_account')->find_by_id($user_id);
     if ($user->is_not_null() && !empty($user->name)) {
-        return redirect('/account/team');
+        return redirect(get_default_redirect_after_login($user_id));
     }
 
     return render('account/set_name', [
@@ -176,6 +180,21 @@ if_post('/api/account/verify_code', function () {
     $vc = dao('verification_code')
         ->find_by_column(['email' => $email, 'type' => 'enter', 'used' => 0]);
 
+    $invite_team_id = null;
+
+    if ($vc->is_null() || $vc->is_expired() || $vc->code !== $code) {
+        $invite_codes = dao('verification_code')
+            ->find_all_by_column(['email' => $email, 'used' => 0]);
+
+        foreach ($invite_codes as $invite_vc) {
+            if (!$invite_vc->is_expired() && $invite_vc->code === $code && starts_with($invite_vc->type, 'team_invite_')) {
+                $vc = $invite_vc;
+                $invite_team_id = (int)str_replace('team_invite_', '', $invite_vc->type);
+                break;
+            }
+        }
+    }
+
     if ($vc->is_null() || $vc->is_expired()) {
         otherwise_error_code('VERIFICATION_CODE_INVALID', false);
     }
@@ -200,6 +219,23 @@ if_post('/api/account/verify_code', function () {
 
     setcookie('user_id', (string)$user->id, time() + 86400 * 30, '/');
 
+    if ($invite_team_id > 0) {
+        $team = dao('team')->find_by_id($invite_team_id);
+        if ($team->is_not_null()) {
+            $existing = dao('team_member')->find_by_column([
+                'team_id' => $invite_team_id,
+                'user_id' => $user->id,
+            ]);
+            if ($existing->is_null() || $existing->is_deleted()) {
+                if ($existing->is_not_null()) {
+                    $existing->restore();
+                } else {
+                    team_member::create($invite_team_id, $user->id, 'member');
+                }
+            }
+        }
+    }
+
     if (empty($user->name)) {
         if (is_ajax()) {
             return ['redirect' => '/account/set_name'];
@@ -207,11 +243,13 @@ if_post('/api/account/verify_code', function () {
         return redirect('/account/set_name');
     }
 
+    $redirect_uri = get_default_redirect_after_login($user->id);
+
     if (is_ajax()) {
-        return ['redirect' => '/account/team'];
+        return ['redirect' => $redirect_uri];
     }
 
-    return redirect('/account/team');
+    return redirect($redirect_uri);
 });
 
 // API: Set user name
@@ -234,11 +272,13 @@ if_post('/api/account/set_name', function () {
 
     $user->name = $name;
 
+    $redirect_uri = get_default_redirect_after_login($user_id);
+
     if (is_ajax()) {
-        return ['redirect' => '/account/team'];
+        return ['redirect' => $redirect_uri];
     }
 
-    return redirect('/account/team');
+    return redirect($redirect_uri);
 });
 
 // API: Create team
@@ -259,9 +299,11 @@ if_post('/api/team/create', function () {
 
     $member = team_member::create($team->id, $user_id, 'creator');
 
+    set_current_team_id($team->id);
+
     return [
         'team_id' => $team->id,
-        'redirect' => '/account/team/' . $team->id,
+        'redirect' => '/team/' . $team->id . '/dashboard',
     ];
 });
 

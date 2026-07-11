@@ -94,3 +94,5 @@ $secondary_items = [
     };
 })();
 </script>
+
+@include('layout/app_footer')

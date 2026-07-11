@@ -81,6 +81,15 @@
         .role-creator { background: #fff7e6; color: #fa8c16; }
         .role-member { background: #f6ffed; color: #52c41a; }
 
+        /* Team switcher */
+        .navbar-team-switcher { position: relative; margin-right: 8px; }
+        .current-team-name { color: #fff; cursor: pointer; padding: 4px 10px; border-radius: 4px; font-size: 13px; background: rgba(255,255,255,.1); display: inline-block; user-select: none; }
+        .current-team-name:hover { background: rgba(255,255,255,.2); }
+        .team-dropdown { position: absolute; top: 34px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.15); min-width: 160px; z-index: 200; padding: 4px 0; }
+        .team-dropdown a { display: block; padding: 8px 16px; color: #333; font-size: 13px; white-space: nowrap; }
+        .team-dropdown a:hover { background: #f5f7fa; color: #1890ff; text-decoration: none; }
+        .team-dropdown-divider { height: 1px; background: #f0f0f0; margin: 4px 0; }
+
         /* Auth pages */
         .auth-page { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .auth-card { background: #fff; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,.15); padding: 40px; width: 100%; max-width: 420px; }
@@ -105,9 +114,27 @@
     <a href="/" class="navbar-logo">PMS</a>
     <div class="navbar-primary">
         <a href="/account/team" class="{{ strpos(server('REQUEST_URI'), '/account/team') === 0 ? 'active' : '' }}">团队</a>
+        @if (isset($current_team) && isset($current_team->id))
+        <a href="/team/{{ $current_team->id }}/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
+        @else
         <a href="/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
+        @endif
     </div>
-    <div class="navbar-user">
+    <div class="navbar-user" style="margin-left:auto;">
+        @if (isset($current_team) && isset($current_team->id))
+        <div class="navbar-team-switcher" id="teamSwitcher">
+            <span class="current-team-name" onclick="toggleTeamDropdown()">{{ $current_team->name }} &#9662;</span>
+            @if (!empty($switchable_teams) && count($switchable_teams) > 0)
+            <div class="team-dropdown" id="teamDropdown" style="display:none;">
+                @foreach ($switchable_teams as $t)
+                <a href="#" onclick="switchTeam({{ $t->id }}); return false;">{{ $t->name }}</a>
+                @endforeach
+                <div class="team-dropdown-divider"></div>
+                <a href="/account/team">查看所有团队</a>
+            </div>
+            @endif
+        </div>
+        @endif
         <span class="user-name">{{ $user->name or '用户' }}</span>
         <a href="/account/logout">退出</a>
     </div>
@@ -130,9 +157,3 @@
     <main class="main-content">
 @endif
 
-@if (!(isset($is_auth) && $is_auth))
-    </main>
-</div>
-</body>
-</html>
-@endif
