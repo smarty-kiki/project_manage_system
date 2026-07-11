@@ -43,14 +43,14 @@ $secondary_items = [
                         <td>{{ $user->name or $user->email }}</td>
                         <td>{{ $user->email }}</td>
                         <td>
-                            @if ($member->role === 'creator')
-                                <span class="role-badge role-creator">创建者</span>
+                            @if ($member->role === 'admin')
+                                <span class="role-badge role-admin">管理员</span>
                             @else
                                 <span class="role-badge role-member">成员</span>
                             @endif
                         </td>
                         <td>{{ $member->joined_time }}</td>
-                        @if ($is_creator && $member->role !== 'creator')
+                        @if ($is_creator && $member->role !== 'admin')
                             <td>
                                 <button class="btn btn-danger btn-sm" onclick="removeMember({{ $member->user_id }})">移除</button>
                             </td>

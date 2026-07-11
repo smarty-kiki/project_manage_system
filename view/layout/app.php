@@ -78,7 +78,7 @@
         .member-table th, .member-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f5f5f5; }
         .member-table th { background: #fafafa; font-weight: 600; color: #666; }
         .role-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-        .role-creator { background: #fff7e6; color: #fa8c16; }
+        .role-admin { background: #fff7e6; color: #fa8c16; }
         .role-member { background: #f6ffed; color: #52c41a; }
 
         /* Team switcher */

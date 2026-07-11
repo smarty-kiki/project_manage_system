@@ -5,7 +5,7 @@ function create_team_with_creator($name, $description, $creator_id): team
     $team = team::create($name, $description, $creator_id);
     $team->save();
 
-    $member = team_member::create($team->id, $creator_id, 'creator');
+    $member = team_member::create($team->id, $creator_id, 'admin');
     $member->save();
 
     return $team;

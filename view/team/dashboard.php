@@ -11,7 +11,7 @@ $secondary_items = [
         <h2>{{ $team->name }}</h2>
         <p style="color:#999;margin-top:4px;">{{ $team->description or '暂无描述' }}</p>
     </div>
-    @if ($current_user_role === 'creator')
+    @if ($current_user_role === 'admin')
     <a href="/team/{{ $team->id }}/member" class="btn btn-primary">邀请成员</a>
     @endif
 </div>
@@ -26,7 +26,7 @@ $secondary_items = [
     <div class="card flex-1" style="min-width:200px;">
         <div class="card-body text-center">
             <div style="font-size:32px;font-weight:700;color:#52c41a;">{{ $creator->name or '--' }}</div>
-            <div style="color:#999;margin-top:4px;">创建者</div>
+            <div style="color:#999;margin-top:4px;">管理员</div>
         </div>
     </div>
     <div class="card flex-1" style="min-width:200px;">
@@ -72,8 +72,8 @@ $secondary_items = [
                             </td>
                             <td>{{ $m_user->email }}</td>
                             <td>
-                                <span class="role-badge {{ $member->role === 'creator' ? 'role-creator' : 'role-member' }}">
-                                    {{ $member->role === 'creator' ? '创建者' : '成员' }}
+                                <span class="role-badge {{ $member->role === 'admin' ? 'role-admin' : 'role-member' }}">
+                                    {{ $member->role === 'admin' ? '管理员' : '成员' }}
                                 </span>
                             </td>
                             <td>{{ $member->joined_time ? substr($member->joined_time, 0, 10) : '--' }}</td>

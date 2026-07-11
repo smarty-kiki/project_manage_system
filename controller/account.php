@@ -277,7 +277,7 @@ if_post('/api/team/create', function () {
 
     $team = team::create($name, $description, $user_id);
 
-    $member = team_member::create($team->id, $user_id, 'creator');
+    $member = team_member::create($team->id, $user_id, 'admin');
 
     set_current_team_id($team->id);
 
