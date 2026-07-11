@@ -57,6 +57,12 @@ if_get('/team/*/project/*', function ($team_id, $project_id) {
         return redirect('/team/' . $team_id . '/project');
     }
 
+    $systems = dao('system')->find_all_by_column(['project_id' => (int)$project_id]);
+    $modules = dao('module')->find_all_by_column(['project_id' => (int)$project_id]);
+    $business_processes = dao('business_process')->find_all_by_column(['project_id' => (int)$project_id]);
+    $requirements = dao('requirement')->find_all_by_column(['project_id' => (int)$project_id]);
+    $bugs = dao('bug')->find_all_by_column(['project_id' => (int)$project_id]);
+
     $projects = dao('project')->find_all_by_column(['team_id' => $team_id]);
     $user = dao('team_account')->find_by_id($user_id);
     $user_teams = get_user_teams($user_id);
@@ -71,6 +77,11 @@ if_get('/team/*/project/*', function ($team_id, $project_id) {
         'user' => $user,
         'current_user_role' => $role,
         'current_project_id' => (int)$project_id,
+        'systems' => $systems,
+        'modules' => $modules,
+        'business_processes' => $business_processes,
+        'requirements' => $requirements,
+        'bugs' => $bugs,
     ]);
 });
 
@@ -150,6 +161,185 @@ if_get('/api/project/detail', function () {
         'creator_id' => $project->creator_id,
         'create_time' => (string)$project->create_time,
         'update_time' => (string)$project->update_time,
+    ];
+});
+
+// API: Create system
+if_post('/api/system/create', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $project_id = (int)input('project_id', 0);
+    $name = trim(input('name', ''));
+    $git_url = trim(input('git_url', ''));
+    $description = trim(input('description', ''));
+
+    if (!$project_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id and name']);
+    }
+
+    $project = dao('project')->find_by_id($project_id);
+    if ($project->is_null()) {
+        otherwise_error_code('PROJECT_NOT_FOUND', false);
+    }
+
+    $system = system::create($project_id, $name, $description, $git_url);
+
+    return [
+        'id' => $system->id,
+        'name' => $system->name,
+        'git_url' => $system->git_url,
+        'description' => $system->description,
+    ];
+});
+
+// API: Create module
+if_post('/api/module/create', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $system_id = (int)input('system_id', 0);
+    $project_id = (int)input('project_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'name']);
+    }
+
+    $system = dao('system')->find_by_id($system_id);
+    if ($system->is_null()) {
+        otherwise_error_code('SYSTEM_NOT_FOUND', false);
+    }
+
+    $module = module::create($project_id, $system_id, $name, $description);
+
+    return [
+        'id' => $module->id,
+        'name' => $module->name,
+        'description' => $module->description,
+    ];
+});
+
+// API: Create business process
+if_post('/api/business_process/create', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $project_id = (int)input('project_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$project_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id and name']);
+    }
+
+    $project = dao('project')->find_by_id($project_id);
+    if ($project->is_null()) {
+        otherwise_error_code('PROJECT_NOT_FOUND', false);
+    }
+
+    $bp = business_process::create($project_id, $name, $description);
+
+    return [
+        'id' => $bp->id,
+        'name' => $bp->name,
+        'description' => $bp->description,
+    ];
+});
+
+// API: Create process node
+if_post('/api/process_node/create', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $business_process_id = (int)input('business_process_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+    $sort_order = (int)input('sort_order', 0);
+
+    if (!$business_process_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'business_process_id and name']);
+    }
+
+    $bp = dao('business_process')->find_by_id($business_process_id);
+    if ($bp->is_null()) {
+        otherwise_error_code('BUSINESS_PROCESS_NOT_FOUND', false);
+    }
+
+    $node = process_node::create($business_process_id, $name, $description, $sort_order);
+
+    return [
+        'id' => $node->id,
+        'name' => $node->name,
+        'description' => $node->description,
+        'sort_order' => $node->sort_order,
+    ];
+});
+
+// API: Create requirement
+if_post('/api/requirement/create', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $project_id = (int)input('project_id', 0);
+    $system_id = (int)input('system_id', 0);
+    $module_id = (int)input('module_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$project_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id and name']);
+    }
+
+    $project = dao('project')->find_by_id($project_id);
+    if ($project->is_null()) {
+        otherwise_error_code('PROJECT_NOT_FOUND', false);
+    }
+
+    $req = requirement::create($project_id, $system_id, $module_id, $name, $description);
+
+    return [
+        'id' => $req->id,
+        'name' => $req->name,
+        'system_id' => $req->system_id,
+        'module_id' => $req->module_id,
+        'description' => $req->description,
+    ];
+});
+
+// API: Create bug
+if_post('/api/bug/create', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $project_id = (int)input('project_id', 0);
+    $requirement_id = (int)input('requirement_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$project_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id and name']);
+    }
+
+    $project = dao('project')->find_by_id($project_id);
+    if ($project->is_null()) {
+        otherwise_error_code('PROJECT_NOT_FOUND', false);
+    }
+
+    $bug = bug::create($project_id, $requirement_id, $name, $description);
+
+    return [
+        'id' => $bug->id,
+        'name' => $bug->name,
+        'requirement_id' => $bug->requirement_id,
+        'description' => $bug->description,
     ];
 });
 

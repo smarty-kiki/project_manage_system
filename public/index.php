@@ -69,6 +69,12 @@ function require_user_team_or_redirect($action, $args)
         '/api/project/list',
         '/api/project/create',
         '/api/project/detail',
+        '/api/system/create',
+        '/api/module/create',
+        '/api/business_process/create',
+        '/api/process_node/create',
+        '/api/requirement/create',
+        '/api/bug/create',
     ];
 
     $current_route = matched_rule();
