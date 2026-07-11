@@ -140,8 +140,6 @@
             </div>
         </div>
         </div>
-        @else
-        <a href="/account/team/create" class="{{ strpos(server('REQUEST_URI'), '/account/team') === 0 ? 'active' : '' }}">切换团队</a>
         @endif
         @if (isset($current_team) && $current_team->is_not_null())
         <a href="/team/{{ $current_team->id }}/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
