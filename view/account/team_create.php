@@ -1,17 +1,16 @@
 @php
-$secondary_items = [
-    ['label' => '我的团队', 'href' => '/account/team', 'icon' => '&#9776;'],
-    ['label' => '创建团队', 'href' => '/account/team/create', 'icon' => '&#43;', 'active' => true],
-];
+$secondary_items = [];
 @endphp
 @include('layout/app')
 
-<div class="page-top-bar">
-    <h2>创建团队</h2>
-</div>
+<style>
+.sidebar { display: none; }
+.main-content { max-width: 520px; margin: 0 auto; padding: 60px 20px; }
+</style>
 
-<div class="card" style="max-width:600px">
+<div class="card">
     <div class="card-body">
+        <h2 style="text-align:center;margin-bottom:24px;color:#1890ff;">创建团队</h2>
         <div id="errorMsg" class="alert alert-error" style="display:none;"></div>
         <div id="successMsg" class="alert alert-success" style="display:none;"></div>
         <form id="createTeamForm" onsubmit="handleCreateTeam();return false;">
@@ -24,7 +23,7 @@ $secondary_items = [
                 <textarea name="description" class="form-control" placeholder="简单描述这个团队的用途..." id="teamDesc"></textarea>
             </div>
             <div class="flex gap-8">
-                <button type="submit" class="btn btn-primary" id="submitBtn" onclick="handleCreateTeam();return false;">创建团队</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn" onclick="handleCreateTeam();return false;" style="flex:1;">创建团队</button>
                 <a href="/account/team" class="btn btn-default">取消</a>
             </div>
         </form>
