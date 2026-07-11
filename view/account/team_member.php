@@ -1,7 +1,7 @@
 @php
 $secondary_items = [
-    ['label' => '我的团队', 'href' => '/account/team', 'icon' => '&#9776;'],
-    ['label' => '成员管理', 'href' => '/account/team/' . $team->id . '/member', 'icon' => '&#9783;', 'active' => true],
+    ['label' => '总览', 'href' => '/team/' . $team->id . '/dashboard', 'icon' => '&#9633;'],
+    ['label' => '团队成员', 'href' => '/account/team/' . $team->id . '/member', 'icon' => '&#9783;', 'active' => true],
 ];
 @endphp
 @include('layout/app')
@@ -13,7 +13,6 @@ $secondary_items = [
     </div>
     <div class="flex gap-8">
         <button class="btn btn-primary btn-sm" id="inviteBtn" onclick="openInviteModal()">邀请成员</button>
-        <a href="/account/team/{{ $team->id }}" class="btn btn-default btn-sm">返回团队</a>
     </div>
 </div>
 
