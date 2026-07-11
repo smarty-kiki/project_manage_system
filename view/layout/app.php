@@ -117,8 +117,8 @@
         <div class="navbar-team-switcher" id="teamSwitcher">
             <span class="current-team-name" onclick="toggleTeamDropdown()">{{ $current_team->name }} &#9662;</span>
             <div class="team-dropdown" id="teamDropdown" style="display:none;">
-                @if (!empty($switchable_teams) && count($switchable_teams) > 0)
-                @foreach ($switchable_teams as $t)
+                @if (!empty($user_teams) && count($user_teams) > 0)
+                @foreach ($user_teams as $t)
                 <a href="#" onclick="switchTeam({{ $t->id }}); return false;">{{ $t->name }}</a>
                 @endforeach
                 <div class="team-dropdown-divider"></div>
