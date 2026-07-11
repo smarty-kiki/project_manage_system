@@ -123,8 +123,6 @@
                 @endforeach
                 <div class="team-dropdown-divider"></div>
                 @endif
-                <a href="/account/team">查看所有团队</a>
-                <div class="team-dropdown-divider"></div>
                 <a href="/account/team/create">新建团队</a>
                 <a href="/account/team">加入团队</a>
             </div>
@@ -136,8 +134,6 @@
                 @foreach ($user_teams as $t)
                 <a href="#" onclick="switchTeam({{ $t->id }}); return false;">{{ $t->name }}</a>
                 @endforeach
-                <div class="team-dropdown-divider"></div>
-                <a href="/account/team">查看所有团队</a>
                 <div class="team-dropdown-divider"></div>
                 <a href="/account/team/create">新建团队</a>
                 <a href="/account/team">加入团队</a>
