@@ -1,6 +1,6 @@
 @php
 $secondary_items = [
-    ['label' => '工作台', 'href' => '/team/' . $team->id . '/dashboard', 'icon' => '&#9633;', 'active' => true],
+    ['label' => '总览', 'href' => '/team/' . $team->id . '/dashboard', 'icon' => '&#9633;', 'active' => true],
     ['label' => '团队成员', 'href' => '/account/team/' . $team->id . '/member', 'icon' => '&#9783;'],
 ];
 @endphp
