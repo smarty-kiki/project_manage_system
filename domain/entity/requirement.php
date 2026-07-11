@@ -6,6 +6,7 @@ class requirement extends entity
         'project_id' => 0,
         'system_id' => 0,
         'module_id' => 0,
+        'role_id' => 0,
         'name' => '',
         'description' => '',
     ];

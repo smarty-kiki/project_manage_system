@@ -62,6 +62,7 @@ if_get('/team/*/project/*', function ($team_id, $project_id) {
     $business_processes = dao('business_process')->find_all_by_column(['project_id' => (int)$project_id]);
     $requirements = dao('requirement')->find_all_by_column(['project_id' => (int)$project_id]);
     $bugs = dao('bug')->find_all_by_column(['project_id' => (int)$project_id]);
+    $project_roles = dao('project_role')->find_all_by_column(['project_id' => (int)$project_id]);
 
     $projects = dao('project')->find_all_by_column(['team_id' => $team_id]);
     $user = dao('team_account')->find_by_id($user_id);
@@ -82,6 +83,7 @@ if_get('/team/*/project/*', function ($team_id, $project_id) {
         'business_processes' => $business_processes,
         'requirements' => $requirements,
         'bugs' => $bugs,
+        'project_roles' => $project_roles,
     ]);
 });
 
@@ -290,6 +292,7 @@ if_post('/api/requirement/create', function () {
     $project_id = (int)input('project_id', 0);
     $system_id = (int)input('system_id', 0);
     $module_id = (int)input('module_id', 0);
+    $role_id = (int)input('role_id', 0);
     $name = trim(input('name', ''));
     $description = trim(input('description', ''));
 
@@ -303,12 +306,14 @@ if_post('/api/requirement/create', function () {
     }
 
     $req = requirement::create($project_id, $system_id, $module_id, $name, $description);
+    $req->role_id = $role_id;
 
     return [
         'id' => $req->id,
         'name' => $req->name,
         'system_id' => $req->system_id,
         'module_id' => $req->module_id,
+        'role_id' => $req->role_id,
         'description' => $req->description,
     ];
 });
@@ -321,6 +326,7 @@ if_post('/api/bug/create', function () {
     $user_id = get_current_user_id();
     $project_id = (int)input('project_id', 0);
     $requirement_id = (int)input('requirement_id', 0);
+    $role_id = (int)input('role_id', 0);
     $name = trim(input('name', ''));
     $description = trim(input('description', ''));
 
@@ -334,12 +340,63 @@ if_post('/api/bug/create', function () {
     }
 
     $bug = bug::create($project_id, $requirement_id, $name, $description);
+    $bug->role_id = $role_id;
 
     return [
         'id' => $bug->id,
         'name' => $bug->name,
         'requirement_id' => $bug->requirement_id,
+        'role_id' => $bug->role_id,
         'description' => $bug->description,
     ];
+});
+
+// API: Create project role
+if_post('/api/project_role/create', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $project_id = (int)input('project_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$project_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id and name']);
+    }
+
+    $project = dao('project')->find_by_id($project_id);
+    if ($project->is_null()) {
+        otherwise_error_code('PROJECT_NOT_FOUND', false);
+    }
+
+    $role = project_role::create($project_id, $name, $description);
+
+    return [
+        'id' => $role->id,
+        'name' => $role->name,
+        'description' => $role->description,
+    ];
+});
+
+// API: List project roles
+if_get('/api/project_role/list', function () {
+    $project_id = (int)input('project_id', 0);
+    if (!$project_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id']);
+    }
+
+    $roles = dao('project_role')->find_all_by_column(['project_id' => $project_id]);
+
+    $result = [];
+    foreach ($roles as $r) {
+        $result[] = [
+            'id' => $r->id,
+            'name' => $r->name,
+            'description' => $r->description,
+        ];
+    }
+
+    return $result;
 });
 

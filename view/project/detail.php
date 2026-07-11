@@ -5,6 +5,7 @@ $business_processes = $business_processes ?? [];
 $requirements = $requirements ?? [];
 $bugs = $bugs ?? [];
 $modules = $modules ?? [];
+$project_roles = $project_roles ?? [];
 @endphp
 @include('layout/app')
 
@@ -20,6 +21,7 @@ $modules = $modules ?? [];
         <a href="javascript:void(0)" onclick="switchTab('system')" id="tab-system" class="tab-link">系统</a>
         <a href="javascript:void(0)" onclick="switchTab('process')" id="tab-process" class="tab-link">业务流程</a>
         <a href="javascript:void(0)" onclick="switchTab('requirement')" id="tab-requirement" class="tab-link">需求</a>
+        <a href="javascript:void(0)" onclick="switchTab('role')" id="tab-role" class="tab-link">角色</a>
         <a href="javascript:void(0)" onclick="switchTab('bug')" id="tab-bug" class="tab-link">BUG</a>
     </div>
 </div>
@@ -43,6 +45,10 @@ $modules = $modules ?? [];
         <div class="card" style="padding: 16px 20px;">
             <div style="color: #999; font-size: 13px; margin-bottom: 8px;">系统数</div>
             <div style="font-size: 18px; font-weight: 600; color: #1890ff;">{{ count($systems) }}</div>
+        </div>
+        <div class="card" style="padding: 16px 20px;">
+            <div style="color: #999; font-size: 13px; margin-bottom: 8px;">角色数</div>
+            <div style="font-size: 18px; font-weight: 600; color: #52c41a;">{{ count($project_roles) }}</div>
         </div>
     </div>
 
@@ -126,6 +132,33 @@ $modules = $modules ?? [];
     </div>
 </div>
 
+<div id="tab-content-role" class="tab-content" style="display: none;">
+    <div class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>角色列表</span>
+            <button class="btn btn-primary btn-sm" onclick="showModal('roleModal')">+ 新建角色</button>
+        </div>
+        <div class="card-body">
+            @if (empty($project_roles))
+            <div class="empty-state"><p>暂无角色</p></div>
+            @else
+            <table class="member-table">
+                <tr>
+                    <th>名称</th>
+                    <th>描述</th>
+                </tr>
+                @foreach ($project_roles as $r)
+                <tr>
+                    <td><strong>{{ $r->name }}</strong></td>
+                    <td style="color: #666;">{{ $r->description or '-' }}</td>
+                </tr>
+                @endforeach
+            </table>
+            @endif
+        </div>
+    </div>
+</div>
+
 <div id="tab-content-requirement" class="tab-content" style="display: none;">
     <div class="card">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -142,16 +175,21 @@ $modules = $modules ?? [];
                     <th>描述</th>
                     <th>关联系统</th>
                     <th>关联模块</th>
+                    <th>关联角色</th>
                 </tr>
                 @foreach ($requirements as $req)
                 @php
                     $sys = null;
                     $mod = null;
+                    $role = null;
                     if ($req->system_id) {
                         foreach ($systems as $s) { if ($s->id == $req->system_id) { $sys = $s; break; } }
                     }
                     if ($req->module_id) {
                         foreach ($modules as $m) { if ($m->id == $req->module_id) { $mod = $m; break; } }
+                    }
+                    if ($req->role_id) {
+                        foreach ($project_roles as $r) { if ($r->id == $req->role_id) { $role = $r; break; } }
                     }
                 @endphp
                 <tr>
@@ -159,6 +197,7 @@ $modules = $modules ?? [];
                     <td style="color: #666;">{{ $req->description or '-' }}</td>
                     <td>{{ $sys ? $sys->name : '-' }}</td>
                     <td>{{ $mod ? $mod->name : '-' }}</td>
+                    <td>{{ $role ? $role->name : '-' }}</td>
                 </tr>
                 @endforeach
             </table>
@@ -182,18 +221,24 @@ $modules = $modules ?? [];
                     <th>名称</th>
                     <th>描述</th>
                     <th>关联需求</th>
+                    <th>关联角色</th>
                 </tr>
                 @foreach ($bugs as $b)
                 @php
                     $linkedReq = null;
+                    $role = null;
                     if ($b->requirement_id) {
                         foreach ($requirements as $r) { if ($r->id == $b->requirement_id) { $linkedReq = $r; break; } }
+                    }
+                    if ($b->role_id) {
+                        foreach ($project_roles as $r) { if ($r->id == $b->role_id) { $role = $r; break; } }
                     }
                 @endphp
                 <tr>
                     <td><strong>{{ $b->name }}</strong></td>
                     <td style="color: #666;">{{ $b->description or '-' }}</td>
                     <td>{{ $linkedReq ? $linkedReq->name : '-' }}</td>
+                    <td>{{ $role ? $role->name : '-' }}</td>
                 </tr>
                 @endforeach
             </table>
@@ -242,6 +287,21 @@ $modules = $modules ?? [];
     </div>
 </div>
 
+<!-- Role Modal -->
+<div id="roleModal" class="modal-overlay" style="display:none;">
+    <div class="modal-dialog">
+        <div class="modal-header"><span>新建角色</span><a href="javascript:void(0)" onclick="hideModal('roleModal')">&times;</a></div>
+        <div class="modal-body">
+            <form onsubmit="submitRoleForm(event, 'roleModal')">
+                <input type="hidden" name="project_id" value="{{ $project->id }}">
+                <div class="form-group"><label>角色名称 *</label><input type="text" class="form-control" name="name" required placeholder="如：顾客、商品运营"></div>
+                <div class="form-group"><label>描述</label><textarea class="form-control" name="description" placeholder="角色职责说明"></textarea></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Requirement Modal -->
 <div id="requirementModal" class="modal-overlay" style="display:none;">
     <div class="modal-dialog">
@@ -267,6 +327,15 @@ $modules = $modules ?? [];
                         @endforeach
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>关联角色</label>
+                    <select class="form-control" name="role_id">
+                        <option value="0">不关联</option>
+                        @foreach ($project_roles as $r)
+                        <option value="{{ $r->id }}">{{ $r->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
                 <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('requirementModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
@@ -288,6 +357,15 @@ $modules = $modules ?? [];
                     <select class="form-control" name="requirement_id">
                         <option value="0">不关联</option>
                         @foreach ($requirements as $r)
+                        <option value="{{ $r->id }}">{{ $r->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>关联角色</label>
+                    <select class="form-control" name="role_id">
+                        <option value="0">不关联</option>
+                        @foreach ($project_roles as $r)
                         <option value="{{ $r->id }}">{{ $r->name }}</option>
                         @endforeach
                     </select>
@@ -334,6 +412,43 @@ function submitForm(e, url, modalId) {
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        btn.disabled = false;
+        btn.textContent = '创建';
+        if (xhr.status === 200) {
+            hideModal(modalId);
+            location.reload();
+        } else {
+            alert('创建失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = '创建';
+        alert('网络错误，请重试');
+    };
+    xhr.send(params.join('&'));
+}
+
+function submitRoleForm(e, modalId) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    var params = [];
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        if (input.name && input.type !== 'submit') {
+            params.push(encodeURIComponent(input.name) + '=' + encodeURIComponent(input.value));
+        }
+    });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/project_role/create', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.onload = function() {

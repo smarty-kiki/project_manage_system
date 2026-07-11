@@ -27,6 +27,8 @@ spl_autoload_register(function ($class_name) {
         'requirement' => 'entity/requirement.php',
         'bug_dao' => 'dao/bug.php',
         'bug' => 'entity/bug.php',
+        'project_role_dao' => 'dao/project_role.php',
+        'project_role' => 'entity/project_role.php',
     ];
 
     if (isset($class_maps[$class_name])) {
