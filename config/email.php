@@ -1,15 +1,15 @@
 <?php
 
 return [
-    'driver' => env('EMAIL_DRIVER', 'log'),
-    'from' => env('EMAIL_FROM', 'noreply@localhost'),
-    'from_name' => env('EMAIL_FROM_NAME', 'Project Manager'),
-    'log_path' => env('EMAIL_LOG_PATH', '/tmp/email.log'),
+    'driver' => 'smtp',
+    'from' => '378031327@qq.com',
+    'from_name' => '项目管理系统',
+    'log_path' => '/tmp/email.log',
     'smtp' => [
-        'host' => env('SMTP_HOST', ''),
-        'port' => (int)env('SMTP_PORT', 25),
-        'username' => env('SMTP_USERNAME', ''),
-        'password' => env('SMTP_PASSWORD', ''),
-        'encryption' => env('SMTP_ENCRYPTION', ''),
+        'host' => 'smtp.qq.com',
+        'port' => 465,
+        'encryption' => 'ssl',
+        'username' => '378031327@qq.com',
+        'password' => 'svnvyobqcxlicaci',
     ],
 ];
