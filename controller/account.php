@@ -90,9 +90,14 @@ if_get('/account/detail', function () {
         return redirect('/account/enter');
     }
 
+    $current_team = get_current_team();
+    $user_teams = get_user_teams($user_id);
+
     return render('account/detail', [
         'title' => '账户详情',
         'user' => $user,
+        'current_team' => $current_team,
+        'user_teams' => $user_teams,
     ]);
 });
 
