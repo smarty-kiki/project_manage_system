@@ -1,9 +1,5 @@
 <?php
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 // API: Send verification code
 if_post('/api/account/send_code', function () {
     $email = trim(input('email', ''));
@@ -102,7 +98,7 @@ if_post('/api/account/verify_code', function () {
         otherwise_error_code('PERMISSION_DENIED', false);
     }
 
-    $_SESSION['user_id'] = $user->id;
+    setcookie('user_id', (string)$user->id, time() + 86400 * 30, '/');
 
     return redirect('/account/team');
 });

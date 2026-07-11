@@ -2,11 +2,7 @@
 
 function get_current_user_id(): ?int
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-
-    $user_id = $_SESSION['user_id'] ?? null;
+    $user_id = cookie('user_id');
 
     if ($user_id && !is_numeric($user_id)) {
         return null;

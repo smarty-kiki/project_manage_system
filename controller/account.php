@@ -1,9 +1,5 @@
 <?php
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 // Login page
 if_get('/account/login', function () {
     if (get_current_user_id()) {
@@ -110,7 +106,6 @@ if_get('/account/team/*/member', function ($team_id) {
 
 // Logout
 if_get('/account/logout', function () {
-    $_SESSION['user_id'] = null;
-    session_destroy();
+    setcookie('user_id', '', time() - 3600, '/');
     return redirect('/account/login');
 });
