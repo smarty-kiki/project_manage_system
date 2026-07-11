@@ -43,16 +43,26 @@
         .gap-12 { gap: 12px; }
         .gap-16 { gap: 16px; }
 
+        /* Top navbar */
+        .top-navbar { height: 48px; background: #001529; display: flex; align-items: center; padding: 0 20px; position: sticky; top: 0; z-index: 100; }
+        .navbar-logo { font-size: 16px; font-weight: 700; color: #fff; margin-right: 32px; }
+        .navbar-primary { display: flex; gap: 4px; flex: 1; }
+        .navbar-primary a { color: rgba(255,255,255,.65); padding: 8px 16px; border-radius: 4px; font-size: 14px; }
+        .navbar-primary a:hover, .navbar-primary a.active { color: #fff; background: #1890ff; }
+        .navbar-user { display: flex; align-items: center; gap: 16px; color: rgba(255,255,255,.65); font-size: 14px; }
+        .navbar-user .user-name { color: #fff; }
+        .navbar-user a { color: rgba(255,255,255,.65); }
+        .navbar-user a:hover { color: #fff; }
+
         /* Layout */
-        .app-layout { display: flex; min-height: 100vh; }
-        .sidebar { width: 200px; background: #001529; color: #fff; flex-shrink: 0; }
-        .sidebar-header { height: 56px; display: flex; align-items: center; padding: 0 20px; font-size: 16px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,.1); }
-        .sidebar-nav { padding: 8px 0; }
-        .sidebar-item { display: flex; align-items: center; padding: 10px 20px; color: rgba(255,255,255,.65); cursor: pointer; }
-        .sidebar-item:hover, .sidebar-item.active { color: #fff; background: #1890ff; }
-        .sidebar-item .icon { margin-right: 10px; font-size: 16px; }
+        .app-layout { display: flex; min-height: calc(100vh - 48px); }
+        .sidebar { width: 180px; background: #fff; border-right: 1px solid #f0f0f0; flex-shrink: 0; padding: 12px 0; }
+        .sidebar-item { display: flex; align-items: center; padding: 10px 20px; color: #666; font-size: 14px; }
+        .sidebar-item:hover { color: #1890ff; background: #f5f7fa; }
+        .sidebar-item.active { color: #1890ff; background: #e6f7ff; font-weight: 500; }
+        .sidebar-item .icon { margin-right: 10px; font-size: 15px; width: 18px; text-align: center; }
         .main-content { flex: 1; padding: 20px; overflow: auto; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 0 16px; }
+        .page-top-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 0 16px; }
         .user-info { display: flex; align-items: center; gap: 12px; }
 
         /* Team cards */
@@ -80,10 +90,49 @@
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar { width: 0; overflow: hidden; }
-            .sidebar.open { width: 200px; }
+            .sidebar.open { width: 180px; }
             .team-grid { grid-template-columns: 1fr; }
             .auth-card { margin: 20px; padding: 24px; }
+            .navbar-primary { display: none; }
         }
     </style>
 </head>
+@if (isset($is_auth) && $is_auth)
+<body class="auth-page">
+@else
 <body>
+<nav class="top-navbar">
+    <a href="/" class="navbar-logo">PMS</a>
+    <div class="navbar-primary">
+        <a href="/account/team" class="{{ strpos(server('REQUEST_URI'), '/account/team') === 0 ? 'active' : '' }}">团队</a>
+        <a href="/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
+    </div>
+    <div class="navbar-user">
+        <span class="user-name">{{ $user->name or '用户' }}</span>
+        <a href="/account/logout">退出</a>
+    </div>
+</nav>
+
+<div class="app-layout">
+    <aside class="sidebar">
+        @if ($secondary_items or false)
+            @foreach ($secondary_items as $item)
+                <a href="{{ $item['href'] }}" class="sidebar-item {{ (isset($item['active']) and $item['active']) ? 'active' : '' }}">
+                    <span class="icon">{{ $item['icon'] or '&#9679;' }}</span>
+                    {{ $item['label'] }}
+                </a>
+            @endforeach
+        @else
+            <div class="sidebar-item" style="color:#999;cursor:default">暂无菜单</div>
+        @endif
+    </aside>
+
+    <main class="main-content">
+@endif
+
+@if (!(isset($is_auth) && $is_auth))
+    </main>
+</div>
+</body>
+</html>
+@endif

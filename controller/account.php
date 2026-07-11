@@ -201,7 +201,14 @@ if_post('/api/account/verify_code', function () {
     setcookie('user_id', (string)$user->id, time() + 86400 * 30, '/');
 
     if (empty($user->name)) {
+        if (is_ajax()) {
+            return ['redirect' => '/account/set_name'];
+        }
         return redirect('/account/set_name');
+    }
+
+    if (is_ajax()) {
+        return ['redirect' => '/account/team'];
     }
 
     return redirect('/account/team');
@@ -226,6 +233,10 @@ if_post('/api/account/set_name', function () {
     }
 
     $user->name = $name;
+
+    if (is_ajax()) {
+        return ['redirect' => '/account/team'];
+    }
 
     return redirect('/account/team');
 });
