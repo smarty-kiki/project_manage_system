@@ -24,7 +24,6 @@ $secondary_items = [];
             </div>
             <div class="flex gap-8">
                 <button type="submit" class="btn btn-primary" id="submitBtn" onclick="handleCreateTeam();return false;" style="flex:1;">创建团队</button>
-                <a href="/account/team" class="btn btn-default">取消</a>
             </div>
         </form>
     </div>
