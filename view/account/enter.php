@@ -17,10 +17,7 @@
         <form id="verifyCodeForm" class="mt-16">
             <div class="form-group">
                 <label>验证码</label>
-                <div class="flex gap-8">
-                    <input type="text" name="code" class="form-control" placeholder="请输入6位验证码" required id="codeInput" maxlength="6">
-                    <button type="button" class="btn btn-default" id="resendBtn" style="width:120px;flex-shrink:0;" disabled>重新发送</button>
-                </div>
+                <input type="text" name="code" class="form-control" placeholder="请输入6位验证码" required id="codeInput" maxlength="6">
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%" id="submitBtn" onclick="handleVerifyCode()">进入</button>
         </form>
@@ -36,7 +33,6 @@
     var codeInput = document.getElementById('codeInput');
     var sendCodeBtn = document.getElementById('sendCodeBtn');
     var submitBtn = document.getElementById('submitBtn');
-    var resendBtn = document.getElementById('resendBtn');
     var errorMsg = document.getElementById('errorMsg');
     var successMsg = document.getElementById('successMsg');
 
@@ -130,26 +126,18 @@
         });
     };
 
-    resendBtn.addEventListener('click', function() {
-        handleSendCode();
-    });
-
     function startCountdown() {
         countdown = 60;
         sendCodeBtn.disabled = true;
-        resendBtn.disabled = true;
         sendCodeBtn.textContent = countdown + '秒后可重发';
         var timer = setInterval(function() {
             countdown--;
             if (countdown <= 0) {
                 clearInterval(timer);
                 sendCodeBtn.disabled = false;
-                resendBtn.disabled = false;
                 sendCodeBtn.textContent = '获取验证码';
-                resendBtn.textContent = '重新发送';
             } else {
                 sendCodeBtn.textContent = countdown + '秒后可重发';
-                resendBtn.textContent = countdown + '秒';
             }
         }, 1000);
     }
