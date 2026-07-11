@@ -52,6 +52,7 @@ $secondary_items = [
                         <td>{{ $member->joined_time }}</td>
                         @if ($is_creator && $member->role !== 'admin')
                             <td>
+                                <button class="btn btn-default btn-sm" onclick="grantAdmin({{ $member->user_id }})">授权管理员</button>
                                 <button class="btn btn-danger btn-sm" onclick="removeMember({{ $member->user_id }})">移除</button>
                             </td>
                         @endif
@@ -167,6 +168,42 @@ window.confirmRemove = function(userId) {
             location.reload();
         } else {
             showPageError(data.msg || '移除失败');
+            restoreInviteModal();
+        }
+    })
+    .catch(function() {
+        showPageError('网络错误');
+        restoreInviteModal();
+    });
+};
+
+window.grantAdmin = function(userId) {
+    var modal = document.getElementById('inviteModal');
+    var cardBody = modal.querySelector('.card-body');
+    modal.style.display = 'flex';
+    cardBody.innerHTML = '<p style="margin-bottom:16px;">确定要将该成员授权为管理员吗？</p>' +
+        '<div class="flex gap-8" style="justify-content:flex-end">' +
+        '<button class="btn btn-default" onclick="restoreInviteModal()">取消</button>' +
+        '<button class="btn btn-primary" onclick="confirmGrantAdmin(' + userId + ')">确认授权</button>' +
+        '</div>';
+};
+
+window.confirmGrantAdmin = function(userId) {
+    var btn = document.querySelector('#confirmInviteBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '处理中...'; }
+
+    fetch('/api/team/member/grant_admin', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+        body: 'team_id=' + encodeURIComponent(currentTeamId) + '&user_id=' + encodeURIComponent(userId)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.code === 0) {
+            closeInviteModal();
+            location.reload();
+        } else {
+            showPageError(data.msg || '授权失败');
             restoreInviteModal();
         }
     })

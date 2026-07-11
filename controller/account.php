@@ -414,6 +414,43 @@ if_post('/api/team/member/remove', function () {
     return ['message' => '成员已移除'];
 });
 
+// API: Grant team admin
+if_post('/api/team/member/grant_admin', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+
+    $team_id = input('team_id', '');
+    $member_user_id = input('user_id', '');
+
+    if (all_empty($team_id, $member_user_id)) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'team_id and user_id']);
+    }
+
+    $team = dao('team')->find_by_id($team_id);
+    if ($team->is_null()) {
+        otherwise_error_code('TEAM_NOT_FOUND', false);
+    }
+
+    if ($team->creator_id != $user_id) {
+        otherwise_error_code('NOT_TEAM_CREATOR', false);
+    }
+
+    $member = dao('team_member')->find_by_column([
+        'team_id' => $team_id,
+        'user_id' => $member_user_id,
+    ]);
+
+    if ($member->is_null() || $member->is_deleted()) {
+        otherwise_error_code('TEAM_MEMBER_NOT_FOUND', false);
+    }
+
+    $member->role = 'admin';
+
+    return ['message' => '已授权为管理员'];
+});
+
 // API: Get team members
 if_get('/api/team/*/member', function ($team_id) {
     $user_id = get_current_user_id();
