@@ -500,6 +500,29 @@ function switchTab(tab) {
     document.getElementById('tab-' + tab).classList.add('active');
 }
 
+function getCurrentTab() {
+    var active = document.querySelector('.tab-link.active');
+    return active ? active.id.replace('tab-', '') : 'role';
+}
+
+function saveCurrentTab() {
+    sessionStorage.setItem('activeTab', getCurrentTab());
+}
+
+function restoreTab() {
+    var tab = sessionStorage.getItem('activeTab');
+    if (tab) {
+        switchTab(tab);
+        sessionStorage.removeItem('activeTab');
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restoreTab);
+} else {
+    restoreTab();
+}
+
 function showModal(id) {
     var modal = document.getElementById(id);
     if (modal) { modal.style.display = 'flex'; }
@@ -545,6 +568,7 @@ function submitForm(e, url, modalId) {
         btn.textContent = '创建';
         if (xhr.status === 200) {
             hideModal(modalId);
+            saveCurrentTab();
             location.reload();
         } else {
             showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
@@ -582,6 +606,7 @@ function submitRoleForm(e, modalId) {
         btn.textContent = '创建';
         if (xhr.status === 200) {
             hideModal(modalId);
+            saveCurrentTab();
             location.reload();
         } else {
             showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
@@ -641,6 +666,7 @@ function submitProcessNodeForm(e, modalId) {
         btn.textContent = '添加节点';
         if (xhr.status === 200) {
             hideModal(modalId);
+            saveCurrentTab();
             location.reload();
         } else {
             showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
