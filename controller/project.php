@@ -373,7 +373,6 @@ if_post('/api/project_role/create', function () {
     $project_id = (int)input('project_id', 0);
     $name = trim(input('name', ''));
     $description = trim(input('description', ''));
-    $process_node_id = (int)input('process_node_id', 0);
 
     if (!$project_id || !$name) {
         otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'project_id and name']);
@@ -384,13 +383,12 @@ if_post('/api/project_role/create', function () {
         otherwise_error_code('PROJECT_NOT_FOUND', false);
     }
 
-    $role = project_role::create($project_id, $name, $description, $process_node_id);
+    $role = project_role::create($project_id, $name, $description);
 
     return [
         'id' => $role->id,
         'name' => $role->name,
         'description' => $role->description,
-        'process_node_id' => $role->process_node_id,
     ];
 });
 

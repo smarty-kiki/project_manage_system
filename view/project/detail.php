@@ -94,8 +94,12 @@ $role_modules = $role_modules ?? [];
             @php
                 $module_names = [];
                 foreach ($modules as $m) { $module_names[$m->id] = $m->name; }
-                $node_names = [];
-                foreach ($process_nodes as $pn) { $node_names[$pn->id] = $pn->name; }
+                $nodes_by_role = [];
+                foreach ($process_nodes as $pn) {
+                    if ($pn->project_role_id) {
+                        $nodes_by_role[$pn->project_role_id][] = $pn->name;
+                    }
+                }
             @endphp
             <table class="member-table">
                 <tr>
@@ -108,7 +112,7 @@ $role_modules = $role_modules ?? [];
                 <tr>
                     <td><strong>{{ $r->name }}</strong></td>
                     <td style="color: #666;">{{ $r->description or '-' }}</td>
-                    <td>{{ $node_names[$r->process_node_id] ?? '-' }}</td>
+                    <td>{{ implode(', ', $nodes_by_role[$r->id] ?? []) ?: '-' }}</td>
                     <td>
                         @php
                             $modIds = $role_modules[$r->id] ?? [];
@@ -407,15 +411,6 @@ $role_modules = $role_modules ?? [];
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>角色名称 *</label><input type="text" class="form-control" name="name" required placeholder="如：顾客、商品运营"></div>
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description" placeholder="角色职责说明"></textarea></div>
-                <div class="form-group">
-                    <label>关联流程节点</label>
-                    <select class="form-control" name="process_node_id">
-                        <option value="0">不关联</option>
-                        @foreach ($process_nodes as $pn)
-                        <option value="{{ $pn->id }}">{{ $pn->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
                 <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
             </form>
         </div>
