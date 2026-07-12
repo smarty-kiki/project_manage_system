@@ -27,6 +27,49 @@ $role_modules = $role_modules ?? [];
     </div>
 </div>
 
+<!-- Discussion Card -->
+<div class="card" style="margin-bottom: 16px;">
+    <div class="card-body">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+                <label style="display: block; margin-bottom: 6px; color: #666; font-size: 14px;">留言</label>
+                <textarea id="discussionInput" class="form-control" rows="3" placeholder="输入内容..." style="resize: vertical;"></textarea>
+                <div style="text-align: right; margin-top: 6px;">
+                    <button class="btn btn-primary btn-sm" onclick="submitDiscussion()">发送</button>
+                </div>
+            </div>
+            <div id="discussionEcho" style="display: none; border-top: 1px solid #f0f0f0; padding-top: 12px;">
+                <div id="discussionText" style="color: #333; font-size: 14px; line-height: 1.8; margin-bottom: 12px; white-space: pre-wrap;"></div>
+                <div style="background: #fafafa; border-radius: 6px; padding: 12px;">
+                    <div style="font-size: 13px; color: #666; margin-bottom: 8px;">待提交确认</div>
+                    <div style="display: flex; border-bottom: 1px solid #f0f0f0; padding: 0 8px; margin-bottom: 8px;">
+                        <a href="javascript:void(0)" onclick="switchPendingTab('role')" id="pending-tab-role" class="tab-link active" style="font-size: 13px;">角色 <span style="display:inline-block;background:#1890ff;color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:4px;">{{ count($project_roles) }}</span></a>
+                        <a href="javascript:void(0)" onclick="switchPendingTab('process')" id="pending-tab-process" class="tab-link" style="font-size: 13px;">业务流程 <span style="display:inline-block;background:#1890ff;color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:4px;">{{ count($business_processes) }}</span></a>
+                        <a href="javascript:void(0)" onclick="switchPendingTab('system')" id="pending-tab-system" class="tab-link" style="font-size: 13px;">系统 <span style="display:inline-block;background:#1890ff;color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:4px;">{{ count($systems) }}</span></a>
+                        <a href="javascript:void(0)" onclick="switchPendingTab('requirement')" id="pending-tab-requirement" class="tab-link" style="font-size: 13px;">需求 <span style="display:inline-block;background:#1890ff;color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:4px;">{{ count($requirements) }}</span></a>
+                        <a href="javascript:void(0)" onclick="switchPendingTab('bug')" id="pending-tab-bug" class="tab-link" style="font-size: 13px;">BUG <span style="display:inline-block;background:#1890ff;color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:4px;">{{ count($bugs) }}</span></a>
+                    </div>
+                    <div id="pending-content-role" class="pending-content">
+                        <div style="color: #999; font-size: 13px;">角色 {{ count($project_roles) }} 个</div>
+                    </div>
+                    <div id="pending-content-process" class="pending-content" style="display: none;">
+                        <div style="color: #999; font-size: 13px;">业务流程 {{ count($business_processes) }} 个</div>
+                    </div>
+                    <div id="pending-content-system" class="pending-content" style="display: none;">
+                        <div style="color: #999; font-size: 13px;">系统 {{ count($systems) }} 个</div>
+                    </div>
+                    <div id="pending-content-requirement" class="pending-content" style="display: none;">
+                        <div style="color: #999; font-size: 13px;">需求 {{ count($requirements) }} 个</div>
+                    </div>
+                    <div id="pending-content-bug" class="pending-content" style="display: none;">
+                        <div style="color: #999; font-size: 13px;">BUG {{ count($bugs) }} 个</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Tab Navigation -->
 <div style="background: #fff; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1);">
     <div style="display: flex; border-bottom: 1px solid #f0f0f0; padding: 0 8px;">
@@ -556,6 +599,23 @@ function submitRoleForm(e, modalId) {
         showError(form, '网络错误，请重试');
     };
     xhr.send(params.join('&'));
+}
+
+function submitDiscussion() {
+    var textarea = document.getElementById('discussionInput');
+    var text = textarea.value.trim();
+    if (!text) return;
+
+    document.getElementById('discussionText').textContent = text;
+    document.getElementById('discussionEcho').style.display = 'block';
+    textarea.value = '';
+}
+
+function switchPendingTab(tab) {
+    document.querySelectorAll('.pending-content').forEach(function(el) { el.style.display = 'none'; });
+    document.querySelectorAll('[id^="pending-tab-"]').forEach(function(el) { el.classList.remove('active'); });
+    document.getElementById('pending-content-' + tab).style.display = 'block';
+    document.getElementById('pending-tab-' + tab).classList.add('active');
 }
 
 function showProcessNodeModal(business_process_id) {
