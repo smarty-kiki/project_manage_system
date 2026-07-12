@@ -5,6 +5,10 @@ function toggleTeamDropdown() {
     var dd = document.getElementById('teamDropdown');
     if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
 }
+function toggleProjectDropdown() {
+    var dd = document.getElementById('projectDropdown');
+    if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
 function switchTeam(teamId) {
     fetch('/api/team/switch', {
         method: 'POST',
@@ -24,6 +28,11 @@ document.addEventListener('click', function(e) {
     if (sw && !sw.contains(e.target)) {
         var dd = document.getElementById('teamDropdown');
         if (dd) dd.style.display = 'none';
+    }
+    var ps = document.getElementById('projectSwitcher');
+    if (ps && !ps.contains(e.target)) {
+        var pd = document.getElementById('projectDropdown');
+        if (pd) pd.style.display = 'none';
     }
 });
 </script>

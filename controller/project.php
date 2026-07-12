@@ -87,6 +87,7 @@ if_get('/team/*/project/*', function ($team_id, $project_id) {
         'user' => $user,
         'current_user_role' => $role,
         'current_project_id' => (int)$project_id,
+        'current_project_name' => $project->name,
         'systems' => $systems,
         'modules' => $modules,
         'business_processes' => $business_processes,

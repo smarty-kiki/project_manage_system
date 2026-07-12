@@ -148,7 +148,20 @@
         </div>
         @endif
         @if (isset($current_team) && $current_team->is_not_null())
-        <a href="/team/{{ $current_team->id }}/project" class="{{ strpos(server('REQUEST_URI'), '/project') === 0 ? 'active' : '' }}">项目</a>
+        @if (isset($projects) && !empty($projects))
+        <div class="navbar-team-switcher" id="projectSwitcher">
+            <span class="current-team-name" onclick="toggleProjectDropdown()">{{ $current_project_name or '选择项目' }} &#9662;</span>
+            <div class="team-dropdown" id="projectDropdown" style="display:none;">
+                @foreach ($projects as $p)
+                <a href="/team/{{ $current_team->id }}/project/{{ $p->id }}">{{ $p->name }}</a>
+                @endforeach
+                <div class="team-dropdown-divider"></div>
+                <a href="/team/{{ $current_team->id }}/project">新建项目</a>
+            </div>
+        </div>
+        @else
+        <a href="/team/{{ $current_team->id }}/project">项目</a>
+        @endif
         @endif
     </div>
     <div class="navbar-user" style="margin-left:auto;">
@@ -184,4 +197,3 @@
 
     <main class="main-content">
 @endif
-
