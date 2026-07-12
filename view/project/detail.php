@@ -544,9 +544,13 @@ function restoreTab() {
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', restoreTab);
+    document.addEventListener('DOMContentLoaded', function() {
+        restoreTab();
+        restoreSelectedSystem();
+    });
 } else {
     restoreTab();
+    restoreSelectedSystem();
 }
 
 function showModal(id) {
@@ -709,8 +713,28 @@ function submitModuleForm(e, modalId) {
 /* ===== Split-pane system/module management ===== */
 var selectedSystemId = null;
 
+function saveSelectedSystem() {
+    if (selectedSystemId) {
+        sessionStorage.setItem('selectedSystemId', selectedSystemId);
+    } else {
+        sessionStorage.removeItem('selectedSystemId');
+    }
+}
+
+function restoreSelectedSystem() {
+    var systemId = sessionStorage.getItem('selectedSystemId');
+    if (systemId) {
+        var el = document.querySelector('.system-item[data-system-id="' + systemId + '"]');
+        if (el) {
+            selectSystem(parseInt(systemId));
+        }
+        sessionStorage.removeItem('selectedSystemId');
+    }
+}
+
 function selectSystem(systemId) {
     selectedSystemId = systemId;
+    saveSelectedSystem();
     document.querySelectorAll('.system-item').forEach(function(el) {
         el.classList.toggle('active', parseInt(el.dataset.systemId) === systemId);
     });
