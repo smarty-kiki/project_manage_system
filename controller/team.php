@@ -21,6 +21,7 @@ if_get('/team/*/dashboard', function ($team_id) {
     $members = get_team_members($team_id);
     $switchable_teams = get_switchable_teams($user_id, (int)$team_id);
     $user_teams = get_user_teams($user_id);
+    $projects = dao('project')->find_all_by_column(['team_id' => $team_id]);
     $admin_count = 0;
     foreach ($members as $m) {
         if ($m->role === 'admin') {
@@ -37,6 +38,7 @@ if_get('/team/*/dashboard', function ($team_id) {
         'current_team' => $team,
         'switchable_teams' => $switchable_teams,
         'user_teams' => $user_teams,
+        'projects' => $projects,
         'admin_count' => $admin_count,
     ]);
 });

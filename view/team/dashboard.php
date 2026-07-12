@@ -38,12 +38,29 @@ $secondary_items = [
 </div>
 
 <div class="card mt-16">
-    <div class="card-header">项目</div>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>项目</span>
+        @if ($current_user_role === 'admin')
+        <a href="/team/{{ $team->id }}/project" class="btn btn-primary btn-sm">+ 新建项目</a>
+        @endif
+    </div>
     <div class="card-body">
+        @if (empty($projects))
         <div class="empty-state">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             <p>暂无项目，敬请期待</p>
         </div>
+        @else
+        <div class="team-grid">
+            @foreach ($projects as $p)
+            <a href="/team/{{ $team->id }}/project/{{ $p->id }}" class="team-card">
+                <h3>{{ $p->name }}</h3>
+                <p>{{ $p->description or '暂无描述' }}</p>
+                <div class="meta">创建于 {{ $p->create_time }}</div>
+            </a>
+            @endforeach
+        </div>
+        @endif
     </div>
 </div>
 
