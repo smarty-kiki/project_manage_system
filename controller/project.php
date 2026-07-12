@@ -17,12 +17,14 @@ if_get('/team/*/project/create', function ($team_id) {
     }
 
     $user_teams = get_user_teams($user_id);
+    $projects = dao('project')->find_all_by_column(['team_id' => $team_id]);
 
     return render('project/create', [
         'title' => '新建项目',
         'team' => $team,
         'current_team' => $team,
         'user_teams' => $user_teams,
+        'projects' => $projects,
     ]);
 });
 
