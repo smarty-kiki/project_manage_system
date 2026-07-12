@@ -464,6 +464,19 @@ $role_modules = $role_modules ?? [];
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>角色名称 *</label><input type="text" class="form-control" name="name" id="roleModalName" required placeholder="如：顾客、商品运营"></div>
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description" id="roleModalDesc" placeholder="角色职责说明"></textarea></div>
+                <div class="form-group" id="roleModalModuleSection" style="display: none;">
+                    <label>关联模块</label>
+                    <div id="roleModalLinkedModules"></div>
+                    <div style="display: flex; gap: 8px; margin-top: 6px;">
+                        <select class="form-control" id="roleModalModuleSelect" style="flex: 1;">
+                            <option value="">选择模块添加</option>
+                            @foreach ($modules as $m)
+                            <option value="{{ $m->id }}">{{ $m->name }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="linkModuleToRole()">添加</button>
+                    </div>
+                </div>
                 <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')">取消</button><button type="submit" class="btn btn-primary" id="roleModalSubmit">创建</button></div>
             </form>
         </div>
@@ -688,7 +701,84 @@ function editRole(id, name, description) {
     document.getElementById('roleModalId').value = id;
     document.getElementById('roleModalName').value = name;
     document.getElementById('roleModalDesc').value = description;
+    document.getElementById('roleModalModuleSection').style.display = 'block';
+    renderRoleModules(id);
     showModal('roleModal');
+}
+
+function renderRoleModules(roleId) {
+    var container = document.getElementById('roleModalLinkedModules');
+    var linked = {};
+    @foreach ($role_modules as $rid => $mids)
+    linked[{{ $rid }}] = {{ json_encode($mids) }};
+    @endforeach
+    var moduleNames = {};
+    @foreach ($modules as $m)
+    moduleNames[{{ $m->id }}] = '{{ addslashes($m->name) }}';
+    @endforeach
+
+    var ids = linked[roleId] || [];
+    var select = document.getElementById('roleModalModuleSelect');
+    select.innerHTML = '<option value="">选择模块添加</option>';
+    var availableNames = {};
+    Object.keys(moduleNames).forEach(function(mid) {
+        if (ids.indexOf(parseInt(mid)) === -1) {
+            availableNames[mid] = moduleNames[mid];
+            var opt = document.createElement('option');
+            opt.value = mid;
+            opt.textContent = moduleNames[mid];
+            select.appendChild(opt);
+        }
+    });
+
+    if (ids.length === 0) {
+        container.innerHTML = '<span style="font-size: 13px; color: #999;">暂无关联模块</span>';
+        return;
+    }
+    var html = '';
+    ids.forEach(function(mid) {
+        html += '<span style="display: inline-flex; align-items: center; background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; border-radius: 4px; padding: 2px 8px; font-size: 13px; margin: 2px 4px 2px 0;">' +
+            escapeHtml(moduleNames[mid] || mid) +
+            ' <a href="javascript:void(0)" onclick="unlinkModuleFromRole(' + roleId + ',' + mid + ')" style="margin-left: 4px; color: #ff4d4f; text-decoration: none; font-weight: bold;">&times;</a>' +
+        '</span>';
+    });
+    container.innerHTML = html;
+}
+
+function linkModuleToRole() {
+    var select = document.getElementById('roleModalModuleSelect');
+    var moduleId = parseInt(select.value);
+    if (!moduleId) return;
+    var roleId = parseInt(document.getElementById('roleModalId').value);
+    var params = 'role_id=' + roleId + '&module_id=' + moduleId;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/project_role/link_module', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            renderRoleModules(roleId);
+        } else {
+            alert('关联失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
+}
+
+function unlinkModuleFromRole(roleId, moduleId) {
+    var params = 'role_id=' + roleId + '&module_id=' + moduleId;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/project_role/unlink_module', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            renderRoleModules(roleId);
+        } else {
+            alert('取消关联失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
 }
 
 function deleteRole(id, name) {
