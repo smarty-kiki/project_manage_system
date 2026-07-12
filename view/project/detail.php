@@ -20,10 +20,10 @@ $role_modules = $role_modules ?? [];
 <div style="background: #fff; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1);">
     <div style="display: flex; border-bottom: 1px solid #f0f0f0; padding: 0 8px;">
         <a href="javascript:void(0)" onclick="switchTab('overview')" id="tab-overview" class="tab-link active">概览</a>
-        <a href="javascript:void(0)" onclick="switchTab('system')" id="tab-system" class="tab-link">系统</a>
-        <a href="javascript:void(0)" onclick="switchTab('process')" id="tab-process" class="tab-link">业务流程</a>
-        <a href="javascript:void(0)" onclick="switchTab('requirement')" id="tab-requirement" class="tab-link">需求</a>
         <a href="javascript:void(0)" onclick="switchTab('role')" id="tab-role" class="tab-link">角色</a>
+        <a href="javascript:void(0)" onclick="switchTab('process')" id="tab-process" class="tab-link">业务流程</a>
+        <a href="javascript:void(0)" onclick="switchTab('system')" id="tab-system" class="tab-link">系统</a>
+        <a href="javascript:void(0)" onclick="switchTab('requirement')" id="tab-requirement" class="tab-link">需求</a>
         <a href="javascript:void(0)" onclick="switchTab('bug')" id="tab-bug" class="tab-link">BUG</a>
     </div>
 </div>
@@ -63,39 +63,41 @@ $role_modules = $role_modules ?? [];
     </div>
 </div>
 
-<div id="tab-content-system" class="tab-content" style="display: none;">
+<div id="tab-content-role" class="tab-content" style="display: none;">
     <div class="card">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>系统列表</span>
-            <button class="btn btn-primary btn-sm" onclick="showModal('systemModal')">+ 新建系统</button>
+            <span>角色列表</span>
+            <button class="btn btn-primary btn-sm" onclick="showModal('roleModal')">+ 新建角色</button>
         </div>
         <div class="card-body">
-            @if (empty($systems))
-            <div class="empty-state"><p>暂无系统</p></div>
+            @if (empty($project_roles))
+            <div class="empty-state"><p>暂无角色</p></div>
             @else
+            @php
+                $module_names = [];
+                foreach ($modules as $m) { $module_names[$m->id] = $m->name; }
+                $node_names = [];
+                foreach ($process_nodes as $pn) { $node_names[$pn->id] = $pn->name; }
+            @endphp
             <table class="member-table">
                 <tr>
                     <th>名称</th>
                     <th>描述</th>
-                    <th>Git 链接</th>
-                    <th>模块数</th>
+                    <th>流程节点</th>
+                    <th>关联模块</th>
                 </tr>
-                @foreach ($systems as $s)
+                @foreach ($project_roles as $r)
                 <tr>
-                    <td><strong>{{ $s->name }}</strong></td>
-                    <td style="color: #666;">{{ $s->description or '-' }}</td>
-                    <td>
-                        @if ($s->git_url)
-                        <a href="{{ $s->git_url }}" target="_blank" style="color: #1890ff;">{{ $s->git_url }}</a>
-                        @else
-                        <span style="color: #999;">-</span>
-                        @endif
-                    </td>
+                    <td><strong>{{ $r->name }}</strong></td>
+                    <td style="color: #666;">{{ $r->description or '-' }}</td>
+                    <td>{{ $node_names[$r->process_node_id] ?? '-' }}</td>
                     <td>
                         @php
-                            $sysModules = array_filter($modules, function($m) use ($s) { return $m->system_id == $s->id; });
+                            $modIds = $role_modules[$r->id] ?? [];
+                            $modNames = [];
+                            foreach ($modIds as $mid) { if (isset($module_names[$mid])) { $modNames[] = $module_names[$mid]; } }
+                            echo implode(', ', $modNames) ?: '-';
                         @endphp
-                        {{ count($sysModules) }} 个
                     </td>
                 </tr>
                 @endforeach
@@ -173,41 +175,39 @@ $role_modules = $role_modules ?? [];
     </div>
 </div>
 
-<div id="tab-content-role" class="tab-content" style="display: none;">
+<div id="tab-content-system" class="tab-content" style="display: none;">
     <div class="card">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>角色列表</span>
-            <button class="btn btn-primary btn-sm" onclick="showModal('roleModal')">+ 新建角色</button>
+            <span>系统列表</span>
+            <button class="btn btn-primary btn-sm" onclick="showModal('systemModal')">+ 新建系统</button>
         </div>
         <div class="card-body">
-            @if (empty($project_roles))
-            <div class="empty-state"><p>暂无角色</p></div>
+            @if (empty($systems))
+            <div class="empty-state"><p>暂无系统</p></div>
             @else
-            @php
-                $module_names = [];
-                foreach ($modules as $m) { $module_names[$m->id] = $m->name; }
-                $node_names = [];
-                foreach ($process_nodes as $pn) { $node_names[$pn->id] = $pn->name; }
-            @endphp
             <table class="member-table">
                 <tr>
                     <th>名称</th>
                     <th>描述</th>
-                    <th>流程节点</th>
-                    <th>关联模块</th>
+                    <th>Git 链接</th>
+                    <th>模块数</th>
                 </tr>
-                @foreach ($project_roles as $r)
+                @foreach ($systems as $s)
                 <tr>
-                    <td><strong>{{ $r->name }}</strong></td>
-                    <td style="color: #666;">{{ $r->description or '-' }}</td>
-                    <td>{{ $node_names[$r->process_node_id] ?? '-' }}</td>
+                    <td><strong>{{ $s->name }}</strong></td>
+                    <td style="color: #666;">{{ $s->description or '-' }}</td>
+                    <td>
+                        @if ($s->git_url)
+                        <a href="{{ $s->git_url }}" target="_blank" style="color: #1890ff;">{{ $s->git_url }}</a>
+                        @else
+                        <span style="color: #999;">-</span>
+                        @endif
+                    </td>
                     <td>
                         @php
-                            $modIds = $role_modules[$r->id] ?? [];
-                            $modNames = [];
-                            foreach ($modIds as $mid) { if (isset($module_names[$mid])) { $modNames[] = $module_names[$mid]; } }
-                            echo implode(', ', $modNames) ?: '-';
+                            $sysModules = array_filter($modules, function($m) use ($s) { return $m->system_id == $s->id; });
                         @endphp
+                        {{ count($sysModules) }} 个
                     </td>
                 </tr>
                 @endforeach
