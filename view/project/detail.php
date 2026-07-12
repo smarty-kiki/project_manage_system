@@ -85,7 +85,7 @@ $role_modules = $role_modules ?? [];
     <div class="card">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>角色列表</span>
-            <button class="btn btn-primary btn-sm" onclick="showModal('roleModal')">+ 新建角色</button>
+            <button class="btn btn-primary btn-sm" onclick="resetRoleModal(); showModal('roleModal')">+ 新建角色</button>
         </div>
         <div class="card-body">
             @if (empty($project_roles))
@@ -665,6 +665,17 @@ function submitForm(e, url, modalId) {
         showError(form, '网络错误，请重试');
     };
     xhr.send(params.join('&'));
+}
+
+function resetRoleModal() {
+    document.getElementById('roleModalId').value = '';
+    document.getElementById('roleModalTitle').textContent = '新建角色';
+    document.getElementById('roleModalSubmit').textContent = '创建';
+    document.getElementById('roleModalModuleSection').style.display = 'none';
+    document.querySelectorAll('.role-module-check').forEach(function(cb) {
+        cb.checked = false;
+        cb.dataset.roleId = '';
+    });
 }
 
 function submitRoleForm(e, modalId) {
