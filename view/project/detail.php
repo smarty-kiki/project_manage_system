@@ -20,10 +20,6 @@ $role_modules = $role_modules ?? [];
 <div style="margin-bottom: 16px;">
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
         <div class="card" style="padding: 16px 20px;">
-            <div style="color: #999; font-size: 13px; margin-bottom: 8px;">项目名称</div>
-            <div style="font-size: 18px; font-weight: 600; color: #333;">{{ $project->name }}</div>
-        </div>
-        <div class="card" style="padding: 16px 20px;">
             <div style="color: #999; font-size: 13px; margin-bottom: 8px;">创建时间</div>
             <div style="font-size: 16px; font-weight: 600; color: #333;">{{ $project->create_time }}</div>
         </div>
