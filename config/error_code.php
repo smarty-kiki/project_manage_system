@@ -25,4 +25,6 @@ return [
     'USER_NOT_FOUND' => '用户不存在',
     'PERMISSION_DENIED' => '没有权限访问该资源',
     'INVALID_REQUEST' => '无效的请求',
+    'SYSTEM_NOT_FOUND' => '系统不存在',
+    'MODULE_NOT_FOUND' => '模块不存在',
 ];

@@ -233,6 +233,114 @@ if_post('/api/module/create', function () {
     ];
 });
 
+// API: Update system
+if_post('/api/system/update', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $system_id = (int)input('system_id', 0);
+    $name = trim(input('name', ''));
+    $git_url = trim(input('git_url', ''));
+    $description = trim(input('description', ''));
+
+    if (!$system_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'system_id and name']);
+    }
+
+    $system = dao('system')->find_by_id($system_id);
+    if ($system->is_null()) {
+        otherwise_error_code('SYSTEM_NOT_FOUND', false);
+    }
+
+    $system->name = $name;
+    $system->git_url = $git_url;
+    $system->description = $description;
+
+    return [
+        'id' => $system->id,
+        'name' => $system->name,
+        'git_url' => $system->git_url,
+        'description' => $system->description,
+    ];
+});
+
+// API: Delete system
+if_post('/api/system/delete', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $system_id = (int)input('system_id', 0);
+
+    if (!$system_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'system_id']);
+    }
+
+    $system = dao('system')->find_by_id($system_id);
+    if ($system->is_null()) {
+        otherwise_error_code('SYSTEM_NOT_FOUND', false);
+    }
+
+    $modules = dao('module')->find_all_by_column(['system_id' => $system_id]);
+    foreach ($modules as $m) {
+        $m->delete();
+    }
+
+    $system->delete();
+
+    return ['id' => $system->id];
+});
+
+// API: Update module
+if_post('/api/module/update', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $user_id = get_current_user_id();
+    $module_id = (int)input('module_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$module_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'module_id and name']);
+    }
+
+    $module = dao('module')->find_by_id($module_id);
+    if ($module->is_null()) {
+        otherwise_error_code('MODULE_NOT_FOUND', false);
+    }
+
+    $module->name = $name;
+    $module->description = $description;
+
+    return [
+        'id' => $module->id,
+        'name' => $module->name,
+        'description' => $module->description,
+    ];
+});
+
+// API: Delete module
+if_post('/api/module/delete', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $module_id = (int)input('module_id', 0);
+
+    if (!$module_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'module_id']);
+    }
+
+    $module = dao('module')->find_by_id($module_id);
+    if ($module->is_null()) {
+        otherwise_error_code('MODULE_NOT_FOUND', false);
+    }
+
+    $module->delete();
+
+    return ['id' => $module->id];
+});
+
 // API: Create business process
 if_post('/api/business_process/create', function () {
     $redirect = require_user_name();

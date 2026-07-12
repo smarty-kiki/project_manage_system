@@ -198,46 +198,44 @@ $role_modules = $role_modules ?? [];
 </div>
 
 <div id="tab-content-system" class="tab-content" style="display: none;">
-    <div class="card">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>系统列表</span>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn btn-primary btn-sm" onclick="showModal('moduleModal')">+ 新建模块</button>
-                <button class="btn btn-primary btn-sm" onclick="showModal('systemModal')">+ 新建系统</button>
+    <div class="split-pane">
+        <!-- Left: System list -->
+        <div class="split-left">
+            <div class="split-panel-header">
+                <span class="split-panel-title">系统列表</span>
+                <button class="btn btn-primary btn-sm" onclick="openSystemModal()">+ 新建</button>
+            </div>
+            <div class="split-panel-body" id="systemList">
+                @if (empty($systems))
+                <div class="empty-state"><p>暂无系统</p></div>
+                @else
+                @foreach ($systems as $s)
+                @php $sysModules = array_filter($modules, function($m) use ($s) { return $m->system_id == $s->id; }); @endphp
+                <div class="system-item" data-system-id="{{ $s->id }}" onclick="selectSystem({{ $s->id }})">
+                    <div class="system-item-name">{{ $s->name }}</div>
+                    <div class="system-item-meta">{{ count($sysModules) }} 个模块</div>
+                    <div class="system-item-actions">
+                        <a href="javascript:void(0)" class="action-link" onclick="event.stopPropagation(); editSystem({{ $s->id }}, '{{ $s->name }}', '{{ $s->git_url or '' }}', '{{ addslashes($s->description or '') }}')">编辑</a>
+                        <a href="javascript:void(0)" class="action-link action-link-danger" onclick="event.stopPropagation(); deleteSystem({{ $s->id }}, '{{ $s->name }}')">删除</a>
+                    </div>
+                </div>
+                @endforeach
+                @endif
             </div>
         </div>
-        <div class="card-body">
-            @if (empty($systems))
-            <div class="empty-state"><p>暂无系统</p></div>
-            @else
-            <table class="member-table">
-                <tr>
-                    <th>名称</th>
-                    <th>描述</th>
-                    <th>Git 链接</th>
-                    <th>模块数</th>
-                </tr>
-                @foreach ($systems as $s)
-                <tr>
-                    <td><strong>{{ $s->name }}</strong></td>
-                    <td style="color: #666;">{{ $s->description or '-' }}</td>
-                    <td>
-                        @if ($s->git_url)
-                        <a href="{{ $s->git_url }}" target="_blank" style="color: #1890ff;">{{ $s->git_url }}</a>
-                        @else
-                        <span style="color: #999;">-</span>
-                        @endif
-                    </td>
-                    <td>
-                        @php
-                            $sysModules = array_filter($modules, function($m) use ($s) { return $m->system_id == $s->id; });
-                        @endphp
-                        {{ count($sysModules) }} 个
-                    </td>
-                </tr>
-                @endforeach
-            </table>
-            @endif
+        <!-- Right: Module list -->
+        <div class="split-right">
+            <div class="split-panel-header">
+                <span class="split-panel-title" id="modulePanelTitle">选择一个系统查看模块</span>
+                <button class="btn btn-primary btn-sm" id="moduleAddBtn" style="display:none;" onclick="openModuleModal()">+ 新建模块</button>
+            </div>
+            <div class="split-panel-body" id="modulePanel">
+                <div class="empty-state" id="moduleEmpty">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    <p>请在左侧选择一个系统</p>
+                </div>
+                <div id="moduleList" style="display:none;"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -342,14 +340,15 @@ $role_modules = $role_modules ?? [];
 <!-- System Modal -->
 <div id="systemModal" class="modal-overlay" style="display:none;">
     <div class="modal-dialog">
-        <div class="modal-header"><span>新建系统</span><a href="javascript:void(0)" onclick="hideModal('systemModal')">&times;</a></div>
+        <div class="modal-header"><span id="systemModalTitle">新建系统</span><a href="javascript:void(0)" onclick="hideModal('systemModal')">&times;</a></div>
         <div class="modal-body">
-            <form onsubmit="submitForm(event, '/api/system/create', 'systemModal')">
+            <form onsubmit="submitSystemForm(event, 'systemModal')">
+                <input type="hidden" name="system_id" id="systemModalId" value="">
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
-                <div class="form-group"><label>系统名称 *</label><input type="text" class="form-control" name="name" required></div>
-                <div class="form-group"><label>Git 链接</label><input type="text" class="form-control" name="git_url" placeholder="https://github.com/..."></div>
-                <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
-                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('systemModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+                <div class="form-group"><label>系统名称 *</label><input type="text" class="form-control" name="name" id="systemModalName" required></div>
+                <div class="form-group"><label>Git 链接</label><input type="text" class="form-control" name="git_url" id="systemModalGit" placeholder="https://github.com/..."></div>
+                <div class="form-group"><label>描述</label><textarea class="form-control" name="description" id="systemModalDesc"></textarea></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('systemModal')">取消</button><button type="submit" class="btn btn-primary" id="systemModalSubmit">创建</button></div>
             </form>
         </div>
     </div>
@@ -358,21 +357,22 @@ $role_modules = $role_modules ?? [];
 <!-- Module Modal -->
 <div id="moduleModal" class="modal-overlay" style="display:none;">
     <div class="modal-dialog">
-        <div class="modal-header"><span>新建模块</span><a href="javascript:void(0)" onclick="hideModal('moduleModal')">&times;</a></div>
+        <div class="modal-header"><span id="moduleModalTitle">新建模块</span><a href="javascript:void(0)" onclick="hideModal('moduleModal')">&times;</a></div>
         <div class="modal-body">
             <form onsubmit="submitModuleForm(event, 'moduleModal')">
+                <input type="hidden" name="module_id" id="moduleModalId" value="">
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>所属系统 *</label>
-                    <select class="form-control" name="system_id" required>
+                    <select class="form-control" name="system_id" id="moduleModalSystemId" required>
                         <option value="0">请选择系统</option>
                         @foreach ($systems as $s)
                         <option value="{{ $s->id }}">{{ $s->name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="form-group"><label>模块名称 *</label><input type="text" class="form-control" name="name" required></div>
-                <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
-                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('moduleModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+                <div class="form-group"><label>模块名称 *</label><input type="text" class="form-control" name="name" id="moduleModalName" required></div>
+                <div class="form-group"><label>描述</label><textarea class="form-control" name="description" id="moduleModalDesc"></textarea></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('moduleModal')">取消</button><button type="submit" class="btn btn-primary" id="moduleModalSubmit">创建</button></div>
             </form>
         </div>
     </div>
@@ -706,6 +706,230 @@ function submitModuleForm(e, modalId) {
     xhr.send(params.join('&'));
 }
 
+/* ===== Split-pane system/module management ===== */
+var selectedSystemId = null;
+
+function selectSystem(systemId) {
+    selectedSystemId = systemId;
+    document.querySelectorAll('.system-item').forEach(function(el) {
+        el.classList.toggle('active', parseInt(el.dataset.systemId) === systemId);
+    });
+    document.getElementById('modulePanelTitle').textContent = '模块列表';
+    document.getElementById('moduleAddBtn').style.display = 'inline-block';
+    document.getElementById('moduleEmpty').style.display = 'none';
+    renderModules(systemId);
+}
+
+function renderModules(systemId) {
+    var container = document.getElementById('moduleList');
+    var modules = {};
+
+    @foreach ($modules as $m)
+    @if ($m->system_id)
+    modules[{{ $m->system_id }}] = modules[{{ $m->system_id }}] || [];
+    modules[{{ $m->system_id }}].push({ id: {{ $m->id }}, name: '{{ addslashes($m->name) }}', description: '{{ addslashes($m->description or '') }}' });
+    @endif
+    @endforeach
+
+    var list = modules[systemId] || [];
+    if (list.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:32px 20px;"><p>该系统暂无模块</p></div>';
+        container.style.display = 'block';
+        return;
+    }
+
+    var html = '';
+    list.forEach(function(m) {
+        html += '<div class="module-item">' +
+            '<div class="module-info">' +
+                '<div class="module-name">' + escapeHtml(m.name) + '</div>' +
+                '<div class="module-desc">' + escapeHtml(m.description || '-') + '</div>' +
+            '</div>' +
+            '<div class="module-actions">' +
+                '<a href="javascript:void(0)" class="action-link" onclick="editModule(' + m.id + ',\'' + escapeJs(m.name) + '\',\'' + escapeJs(m.description) + '\')">编辑</a>' +
+                '<a href="javascript:void(0)" class="action-link action-link-danger" onclick="deleteModule(' + m.id + ',\'' + escapeJs(m.name) + '\')">删除</a>' +
+            '</div>' +
+        '</div>';
+    });
+    container.innerHTML = html;
+    container.style.display = 'block';
+}
+
+function openSystemModal() {
+    document.getElementById('systemModalTitle').textContent = '新建系统';
+    document.getElementById('systemModalSubmit').textContent = '创建';
+    document.getElementById('systemModalId').value = '';
+    document.getElementById('systemModalName').value = '';
+    document.getElementById('systemModalGit').value = '';
+    document.getElementById('systemModalDesc').value = '';
+    showModal('systemModal');
+}
+
+function editSystem(id, name, gitUrl, description) {
+    document.getElementById('systemModalTitle').textContent = '编辑系统';
+    document.getElementById('systemModalSubmit').textContent = '保存';
+    document.getElementById('systemModalId').value = id;
+    document.getElementById('systemModalName').value = name;
+    document.getElementById('systemModalGit').value = gitUrl;
+    document.getElementById('systemModalDesc').value = description;
+    showModal('systemModal');
+}
+
+function submitSystemForm(e, modalId) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    var systemId = document.getElementById('systemModalId').value;
+    var url = systemId ? '/api/system/update' : '/api/system/create';
+
+    var params = [];
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        if (input.name && input.type !== 'submit') {
+            params.push(encodeURIComponent(input.name) + '=' + encodeURIComponent(input.value));
+        }
+    });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        if (xhr.status === 200) {
+            hideModal(modalId);
+            saveCurrentTab();
+            location.reload();
+        } else {
+            showError(form, '操作失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        showError(form, '网络错误，请重试');
+    };
+    xhr.send(params.join('&'));
+}
+
+function deleteSystem(id, name) {
+    if (!confirm('确定删除系统「' + name + '」吗？该系统的所有模块也将被删除。')) return;
+    var params = 'system_id=' + encodeURIComponent(id);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/system/delete', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            if (selectedSystemId === id) {
+                selectedSystemId = null;
+                document.getElementById('modulePanelTitle').textContent = '选择一个系统查看模块';
+                document.getElementById('moduleAddBtn').style.display = 'none';
+                document.getElementById('moduleList').style.display = 'none';
+                document.getElementById('moduleEmpty').style.display = 'block';
+            }
+            saveCurrentTab();
+            location.reload();
+        } else {
+            alert('删除失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
+}
+
+function openModuleModal() {
+    if (!selectedSystemId) { alert('请先在左侧选择一个系统'); return; }
+    document.getElementById('moduleModalTitle').textContent = '新建模块';
+    document.getElementById('moduleModalSubmit').textContent = '创建';
+    document.getElementById('moduleModalId').value = '';
+    document.getElementById('moduleModalSystemId').value = selectedSystemId;
+    document.getElementById('moduleModalName').value = '';
+    document.getElementById('moduleModalDesc').value = '';
+    showModal('moduleModal');
+}
+
+function editModule(id, name, description) {
+    document.getElementById('moduleModalTitle').textContent = '编辑模块';
+    document.getElementById('moduleModalSubmit').textContent = '保存';
+    document.getElementById('moduleModalId').value = id;
+    document.getElementById('moduleModalName').value = name;
+    document.getElementById('moduleModalDesc').value = description;
+    showModal('moduleModal');
+}
+
+function submitModuleForm(e, modalId) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    var moduleId = document.getElementById('moduleModalId').value;
+    var url = moduleId ? '/api/module/update' : '/api/module/create';
+
+    var params = [];
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        if (input.name && input.type !== 'submit') {
+            params.push(encodeURIComponent(input.name) + '=' + encodeURIComponent(input.value));
+        }
+    });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        if (xhr.status === 200) {
+            hideModal(modalId);
+            saveCurrentTab();
+            location.reload();
+        } else {
+            showError(form, '操作失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        showError(form, '网络错误，请重试');
+    };
+    xhr.send(params.join('&'));
+}
+
+function deleteModule(id, name) {
+    if (!confirm('确定删除模块「' + name + '」吗？')) return;
+    var params = 'module_id=' + encodeURIComponent(id);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/module/delete', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            saveCurrentTab();
+            location.reload();
+        } else {
+            alert('删除失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
+}
+
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function escapeJs(str) {
+    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '');
+}
+
 function submitProcessNodeForm(e, modalId) {
     e.preventDefault();
     var form = e.target;
@@ -758,6 +982,35 @@ document.querySelectorAll('.modal-overlay').forEach(function(modal) {
 .modal-header a { color: #999; font-size: 20px; text-decoration: none; }
 .modal-body { padding: 20px; }
 .modal-body .text-right .btn:not(:last-child) { margin-right: 8px; }
+
+/* Split pane */
+.split-pane { display: flex; border: 1px solid #f0f0f0; border-radius: 8px; background: #fff; min-height: 400px; }
+.split-left { width: 35%; border-right: 1px solid #f0f0f0; display: flex; flex-direction: column; background: #fafafa; }
+.split-right { width: 65%; display: flex; flex-direction: column; }
+.split-panel-header { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+.split-panel-body { flex: 1; overflow-y: auto; padding: 8px; }
+.system-item { padding: 12px 14px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; border: 1px solid transparent; transition: all .15s; }
+.system-item:hover { background: #e6f7ff; border-color: #91d5ff; }
+.system-item.active { background: #e6f7ff; border-color: #1890ff; }
+.system-item-name { font-size: 14px; font-weight: 500; color: #333; margin-bottom: 4px; }
+.system-item-meta { font-size: 12px; color: #999; }
+.system-item-actions { margin-top: 6px; display: flex; gap: 12px; }
+.action-link { font-size: 12px; color: #1890ff; cursor: pointer; text-decoration: none; }
+.action-link:hover { text-decoration: underline; }
+.action-link-danger { color: #ff4d4f; }
+.module-item { display: flex; align-items: flex-start; padding: 10px 14px; border-bottom: 1px solid #f5f5f5; transition: background .15s; }
+.module-item:last-child { border-bottom: none; }
+.module-item:hover { background: #f5f7fa; }
+.module-info { flex: 1; min-width: 0; }
+.module-name { font-size: 14px; font-weight: 500; color: #333; margin-bottom: 2px; }
+.module-desc { font-size: 12px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.module-actions { display: flex; gap: 10px; flex-shrink: 0; margin-left: 12px; padding-top: 2px; }
+
+@media (max-width: 768px) {
+    .split-pane { flex-direction: column; }
+    .split-left, .split-right { width: 100%; }
+    .split-left { border-right: none; border-bottom: 1px solid #f0f0f0; max-height: 200px; }
+}
 </style>
 
 @include('layout/app_footer')
