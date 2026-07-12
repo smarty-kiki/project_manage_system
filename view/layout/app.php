@@ -22,7 +22,15 @@
         .form-group label { display: block; margin-bottom: 6px; color: #666; }
         .form-control { width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; outline: none; }
         .form-control:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.2); }
-        select.form-control { padding-right: 32px; }
+        select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px 12px;
+}
         textarea.form-control { min-height: 80px; resize: vertical; }
         .alert { padding: 10px 16px; border-radius: 4px; margin-bottom: 16px; }
         .alert-error { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
