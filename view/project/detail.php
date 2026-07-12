@@ -30,11 +30,11 @@ $role_modules = $role_modules ?? [];
 <!-- Tab Navigation -->
 <div style="background: #fff; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1);">
     <div style="display: flex; border-bottom: 1px solid #f0f0f0; padding: 0 8px;">
-        <a href="javascript:void(0)" onclick="switchTab('role')" id="tab-role" class="tab-link active">角色</a>
-        <a href="javascript:void(0)" onclick="switchTab('process')" id="tab-process" class="tab-link">业务流程</a>
-        <a href="javascript:void(0)" onclick="switchTab('system')" id="tab-system" class="tab-link">系统</a>
-        <a href="javascript:void(0)" onclick="switchTab('requirement')" id="tab-requirement" class="tab-link">需求</a>
-        <a href="javascript:void(0)" onclick="switchTab('bug')" id="tab-bug" class="tab-link">BUG</a>
+        <a href="javascript:void(0)" onclick="switchTab('role')" id="tab-role" class="tab-link active">角色 <span style="display:inline-block;background:#1890ff;color:#fff;font-size:12px;padding:1px 7px;border-radius:10px;margin-left:4px;">{{ count($project_roles) }}</span></a>
+        <a href="javascript:void(0)" onclick="switchTab('process')" id="tab-process" class="tab-link">业务流程 <span style="display:inline-block;background:#1890ff;color:#fff;font-size:12px;padding:1px 7px;border-radius:10px;margin-left:4px;">{{ count($business_processes) }}</span></a>
+        <a href="javascript:void(0)" onclick="switchTab('system')" id="tab-system" class="tab-link">系统 <span style="display:inline-block;background:#1890ff;color:#fff;font-size:12px;padding:1px 7px;border-radius:10px;margin-left:4px;">{{ count($systems) }}</span></a>
+        <a href="javascript:void(0)" onclick="switchTab('requirement')" id="tab-requirement" class="tab-link">需求 <span style="display:inline-block;background:#1890ff;color:#fff;font-size:12px;padding:1px 7px;border-radius:10px;margin-left:4px;">{{ count($requirements) }}</span></a>
+        <a href="javascript:void(0)" onclick="switchTab('bug')" id="tab-bug" class="tab-link">BUG <span style="display:inline-block;background:#1890ff;color:#fff;font-size:12px;padding:1px 7px;border-radius:10px;margin-left:4px;">{{ count($bugs) }}</span></a>
     </div>
 </div>
 
