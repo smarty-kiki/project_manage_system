@@ -27,14 +27,6 @@ $role_modules = $role_modules ?? [];
             <div style="color: #999; font-size: 13px; margin-bottom: 8px;">最近更新</div>
             <div style="font-size: 16px; font-weight: 600; color: #333;">{{ $project->update_time }}</div>
         </div>
-        <div class="card" style="padding: 16px 20px;">
-            <div style="color: #999; font-size: 13px; margin-bottom: 8px;">系统数</div>
-            <div style="font-size: 18px; font-weight: 600; color: #1890ff;">{{ count($systems) }}</div>
-        </div>
-        <div class="card" style="padding: 16px 20px;">
-            <div style="color: #999; font-size: 13px; margin-bottom: 8px;">角色数</div>
-            <div style="font-size: 18px; font-weight: 600; color: #52c41a;">{{ count($project_roles) }}</div>
-        </div>
     </div>
     <div class="card">
         <div class="card-header">项目描述</div>
