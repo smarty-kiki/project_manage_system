@@ -31,10 +31,9 @@ $role_modules = $role_modules ?? [];
 <div class="card" style="margin-bottom: 16px;">
     <div class="card-body">
         <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div>
-                <label style="display: block; margin-bottom: 6px; color: #666; font-size: 14px;">留言</label>
-                <textarea id="discussionInput" class="form-control" rows="3" placeholder="输入内容..." style="resize: vertical;"></textarea>
-                <div style="text-align: right; margin-top: 6px;">
+            <div style="position: relative;">
+                <textarea id="discussionInput" class="form-control" rows="3" placeholder="输入内容..." style="resize: vertical; padding-bottom: 40px;"></textarea>
+                <div style="position: absolute; bottom: 8px; right: 8px;">
                     <button class="btn btn-primary btn-sm" onclick="submitDiscussion()">发送</button>
                 </div>
             </div>
