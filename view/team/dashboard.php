@@ -51,15 +51,16 @@ $secondary_items = [
             <p>暂无项目，敬请期待</p>
         </div>
         @else
-        <div class="team-grid">
+        <table class="member-table">
+            <tr><th>项目名称</th><th>描述</th><th>创建时间</th></tr>
             @foreach ($projects as $p)
-            <a href="/team/{{ $team->id }}/project/{{ $p->id }}" class="team-card">
-                <h3>{{ $p->name }}</h3>
-                <p>{{ $p->description or '暂无描述' }}</p>
-                <div class="meta">创建于 {{ $p->create_time }}</div>
-            </a>
+            <tr>
+                <td><a href="/team/{{ $team->id }}/project/{{ $p->id }}" style="color:#1890ff;">{{ $p->name }}</a></td>
+                <td style="color:#666;">{{ $p->description or '-' }}</td>
+                <td style="color:#999;font-size:13px;">{{ $p->create_time }}</td>
+            </tr>
             @endforeach
-        </div>
+        </table>
         @endif
     </div>
 </div>
