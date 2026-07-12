@@ -107,6 +107,7 @@ $role_modules = $role_modules ?? [];
                     <th>描述</th>
                     <th>流程节点</th>
                     <th>关联模块</th>
+                    <th style="width: 100px;">操作</th>
                 </tr>
                 @foreach ($project_roles as $r)
                 <tr>
@@ -120,6 +121,10 @@ $role_modules = $role_modules ?? [];
                             foreach ($modIds as $mid) { if (isset($module_names[$mid])) { $modNames[] = $module_names[$mid]; } }
                             echo implode(', ', $modNames) ?: '-';
                         @endphp
+                    </td>
+                    <td>
+                        <a href="javascript:void(0)" class="action-link" onclick="editRole({{ $r->id }}, '{{ addslashes($r->name) }}', '{{ addslashes($r->description or '') }}')">编辑</a>
+                        <a href="javascript:void(0)" class="action-link action-link-danger" onclick="deleteRole({{ $r->id }}, '{{ addslashes($r->name) }}')">删除</a>
                     </td>
                 </tr>
                 @endforeach
@@ -164,7 +169,11 @@ $role_modules = $role_modules ?? [];
                         <span style="color: #1890ff; font-size: 12px; margin-left: 8px;">发起：{{ $initiator->name }}</span>
                         @endif
                     </div>
-                    <button class="btn btn-default btn-xs" onclick="showProcessNodeModal({{ $bp->id }})">+ 添加节点</button>
+                    <div>
+                        <a href="javascript:void(0)" class="action-link" onclick="editProcess({{ $bp->id }}, '{{ addslashes($bp->name) }}', '{{ addslashes($bp->description or '') }}', {{ $bp->initiator_role_id }})">编辑</a>
+                        <a href="javascript:void(0)" class="action-link action-link-danger" onclick="deleteProcess({{ $bp->id }}, '{{ addslashes($bp->name) }}')">删除</a>
+                        <button class="btn btn-default btn-xs" onclick="showProcessNodeModal({{ $bp->id }})" style="margin-left: 8px;">+ 添加节点</button>
+                    </div>
                 </div>
                 @if (!empty($bp_nodes))
                 <table class="member-table" style="font-size: 13px;">
@@ -173,6 +182,7 @@ $role_modules = $role_modules ?? [];
                         <th>节点名称</th>
                         <th>描述</th>
                         <th>绑定角色</th>
+                        <th style="width: 100px;">操作</th>
                     </tr>
                     @foreach ($bp_nodes as $node)
                     @php
@@ -186,6 +196,10 @@ $role_modules = $role_modules ?? [];
                         <td>{{ $node->name }}</td>
                         <td style="color: #999;">{{ $node->description or '-' }}</td>
                         <td>{{ $node_role ? $node_role->name : '-' }}</td>
+                        <td>
+                            <a href="javascript:void(0)" class="action-link" onclick="editProcessNode({{ $node->id }}, '{{ addslashes($node->name) }}', '{{ addslashes($node->description or '') }}', {{ $node->sort_order }}, {{ $node->project_role_id }})">编辑</a>
+                            <a href="javascript:void(0)" class="action-link action-link-danger" onclick="deleteProcessNode({{ $node->id }}, '{{ addslashes($node->name) }}')">删除</a>
+                        </td>
                     </tr>
                     @endforeach
                 </table>
@@ -257,6 +271,7 @@ $role_modules = $role_modules ?? [];
                     <th>关联系统</th>
                     <th>关联模块</th>
                     <th>关联角色</th>
+                    <th style="width: 100px;">操作</th>
                 </tr>
                 @foreach ($requirements as $req)
                 @php
@@ -279,6 +294,10 @@ $role_modules = $role_modules ?? [];
                     <td>{{ $sys ? $sys->name : '-' }}</td>
                     <td>{{ $mod ? $mod->name : '-' }}</td>
                     <td>{{ $role ? $role->name : '-' }}</td>
+                    <td>
+                        <a href="javascript:void(0)" class="action-link" onclick="editRequirement({{ $req->id }}, {{ $req->project_id }}, {{ $req->system_id }}, {{ $req->module_id }}, {{ $req->role_id }}, '{{ addslashes($req->name) }}', '{{ addslashes($req->description or '') }}')">编辑</a>
+                        <a href="javascript:void(0)" class="action-link action-link-danger" onclick="deleteRequirement({{ $req->id }}, '{{ addslashes($req->name) }}')">删除</a>
+                    </td>
                 </tr>
                 @endforeach
             </table>
@@ -303,6 +322,7 @@ $role_modules = $role_modules ?? [];
                     <th>描述</th>
                     <th>关联需求</th>
                     <th>关联角色</th>
+                    <th style="width: 100px;">操作</th>
                 </tr>
                 @foreach ($bugs as $b)
                 @php
@@ -320,6 +340,10 @@ $role_modules = $role_modules ?? [];
                     <td style="color: #666;">{{ $b->description or '-' }}</td>
                     <td>{{ $linkedReq ? $linkedReq->name : '-' }}</td>
                     <td>{{ $role ? $role->name : '-' }}</td>
+                    <td>
+                        <a href="javascript:void(0)" class="action-link" onclick="editBug({{ $b->id }}, {{ $b->project_id }}, {{ $b->requirement_id }}, {{ $b->role_id }}, '{{ addslashes($b->name) }}', '{{ addslashes($b->description or '') }}')">编辑</a>
+                        <a href="javascript:void(0)" class="action-link action-link-danger" onclick="deleteBug({{ $b->id }}, '{{ addslashes($b->name) }}')">删除</a>
+                    </td>
                 </tr>
                 @endforeach
             </table>
@@ -381,22 +405,23 @@ $role_modules = $role_modules ?? [];
 <!-- Business Process Modal -->
 <div id="processModal" class="modal-overlay" style="display:none;">
     <div class="modal-dialog">
-        <div class="modal-header"><span>新建业务流程</span><a href="javascript:void(0)" onclick="hideModal('processModal')">&times;</a></div>
+        <div class="modal-header"><span id="processModalTitle">新建业务流程</span><a href="javascript:void(0)" onclick="hideModal('processModal')">&times;</a></div>
         <div class="modal-body">
-            <form onsubmit="submitForm(event, '/api/business_process/create', 'processModal')">
+            <form onsubmit="submitProcessForm(event, 'processModal')">
+                <input type="hidden" name="bp_id" id="processModalId" value="">
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
-                <div class="form-group"><label>流程名称 *</label><input type="text" class="form-control" name="name" required></div>
-                <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
+                <div class="form-group"><label>流程名称 *</label><input type="text" class="form-control" name="name" id="processModalName" required></div>
+                <div class="form-group"><label>描述</label><textarea class="form-control" name="description" id="processModalDesc"></textarea></div>
                 <div class="form-group">
                     <label>发起角色</label>
-                    <select class="form-control" name="initiator_role_id">
+                    <select class="form-control" name="initiator_role_id" id="processModalRole">
                         <option value="0">不指定</option>
                         @foreach ($project_roles as $r)
                         <option value="{{ $r->id }}">{{ $r->name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('processModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('processModal')">取消</button><button type="submit" class="btn btn-primary" id="processModalSubmit">创建</button></div>
             </form>
         </div>
     </div>
@@ -405,9 +430,10 @@ $role_modules = $role_modules ?? [];
 <!-- Process Node Modal -->
 <div id="processNodeModal" class="modal-overlay" style="display:none;">
     <div class="modal-dialog">
-        <div class="modal-header"><span>新建流程节点</span><a href="javascript:void(0)" onclick="hideModal('processNodeModal')">&times;</a></div>
+        <div class="modal-header"><span id="processNodeModalTitle">新建流程节点</span><a href="javascript:void(0)" onclick="hideModal('processNodeModal')">&times;</a></div>
         <div class="modal-body">
             <form onsubmit="submitProcessNodeForm(event, 'processNodeModal')">
+                <input type="hidden" name="node_id" id="nodeModalId" value="">
                 <input type="hidden" name="business_process_id" id="node_bp_id" value="">
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>节点名称 *</label><input type="text" class="form-control" name="name" required></div>
@@ -422,7 +448,7 @@ $role_modules = $role_modules ?? [];
                     </select>
                 </div>
                 <div class="form-group"><label>排序</label><input type="number" class="form-control" name="sort_order" value="0"></div>
-                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('processNodeModal')">取消</button><button type="submit" class="btn btn-primary">添加节点</button></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('processNodeModal')">取消</button><button type="submit" class="btn btn-primary" id="processNodeModalSubmit">添加节点</button></div>
             </form>
         </div>
     </div>
@@ -431,13 +457,14 @@ $role_modules = $role_modules ?? [];
 <!-- Role Modal -->
 <div id="roleModal" class="modal-overlay" style="display:none;">
     <div class="modal-dialog">
-        <div class="modal-header"><span>新建角色</span><a href="javascript:void(0)" onclick="hideModal('roleModal')">&times;</a></div>
+        <div class="modal-header"><span id="roleModalTitle">新建角色</span><a href="javascript:void(0)" onclick="hideModal('roleModal')">&times;</a></div>
         <div class="modal-body">
             <form onsubmit="submitRoleForm(event, 'roleModal')">
+                <input type="hidden" name="role_id" id="roleModalId" value="">
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
-                <div class="form-group"><label>角色名称 *</label><input type="text" class="form-control" name="name" required placeholder="如：顾客、商品运营"></div>
-                <div class="form-group"><label>描述</label><textarea class="form-control" name="description" placeholder="角色职责说明"></textarea></div>
-                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+                <div class="form-group"><label>角色名称 *</label><input type="text" class="form-control" name="name" id="roleModalName" required placeholder="如：顾客、商品运营"></div>
+                <div class="form-group"><label>描述</label><textarea class="form-control" name="description" id="roleModalDesc" placeholder="角色职责说明"></textarea></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')">取消</button><button type="submit" class="btn btn-primary" id="roleModalSubmit">创建</button></div>
             </form>
         </div>
     </div>
@@ -446,9 +473,10 @@ $role_modules = $role_modules ?? [];
 <!-- Requirement Modal -->
 <div id="requirementModal" class="modal-overlay" style="display:none;">
     <div class="modal-dialog">
-        <div class="modal-header"><span>新建需求</span><a href="javascript:void(0)" onclick="hideModal('requirementModal')">&times;</a></div>
+        <div class="modal-header"><span id="requirementModalTitle">新建需求</span><a href="javascript:void(0)" onclick="hideModal('requirementModal')">&times;</a></div>
         <div class="modal-body">
-            <form onsubmit="submitForm(event, '/api/requirement/create', 'requirementModal')">
+            <form onsubmit="submitRequirementForm(event, 'requirementModal')">
+                <input type="hidden" name="requirement_id" id="requirementModalId" value="">
                 <div class="form-group"><label>需求名称 *</label><input type="text" class="form-control" name="name" required></div>
                 <div class="form-group">
                     <label>关联系统</label>
@@ -479,7 +507,7 @@ $role_modules = $role_modules ?? [];
                 </div>
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
-                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('requirementModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('requirementModal')">取消</button><button type="submit" class="btn btn-primary" id="requirementModalSubmit">创建</button></div>
             </form>
         </div>
     </div>
@@ -488,9 +516,10 @@ $role_modules = $role_modules ?? [];
 <!-- Bug Modal -->
 <div id="bugModal" class="modal-overlay" style="display:none;">
     <div class="modal-dialog">
-        <div class="modal-header"><span>新建 BUG</span><a href="javascript:void(0)" onclick="hideModal('bugModal')">&times;</a></div>
+        <div class="modal-header"><span id="bugModalTitle">新建 BUG</span><a href="javascript:void(0)" onclick="hideModal('bugModal')">&times;</a></div>
         <div class="modal-body">
-            <form onsubmit="submitForm(event, '/api/bug/create', 'bugModal')">
+            <form onsubmit="submitBugForm(event, 'bugModal')">
+                <input type="hidden" name="bug_id" id="bugModalId" value="">
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>BUG 名称 *</label><input type="text" class="form-control" name="name" required></div>
                 <div class="form-group">
@@ -512,7 +541,7 @@ $role_modules = $role_modules ?? [];
                     </select>
                 </div>
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
-                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('bugModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('bugModal')">取消</button><button type="submit" class="btn btn-primary" id="bugModalSubmit">创建</button></div>
             </form>
         </div>
     </div>
@@ -619,6 +648,9 @@ function submitRoleForm(e, modalId) {
     btn.disabled = true;
     btn.textContent = '提交中...';
 
+    var roleId = document.getElementById('roleModalId').value;
+    var url = roleId ? '/api/project_role/update' : '/api/project_role/create';
+
     var params = [];
     var inputs = form.querySelectorAll('input, select, textarea');
     inputs.forEach(function(input) {
@@ -628,26 +660,53 @@ function submitRoleForm(e, modalId) {
     });
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/project_role/create', true);
+    xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.onload = function() {
         btn.disabled = false;
-        btn.textContent = '创建';
+        btn.textContent = '提交中...';
         if (xhr.status === 200) {
             hideModal(modalId);
             saveCurrentTab();
             location.reload();
         } else {
-            showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
+            showError(form, '操作失败：' + (xhr.responseText || '未知错误'));
         }
     };
     xhr.onerror = function() {
         btn.disabled = false;
-        btn.textContent = '创建';
+        btn.textContent = '提交中...';
         showError(form, '网络错误，请重试');
     };
     xhr.send(params.join('&'));
+}
+
+function editRole(id, name, description) {
+    document.getElementById('roleModalTitle').textContent = '编辑角色';
+    document.getElementById('roleModalSubmit').textContent = '保存';
+    document.getElementById('roleModalId').value = id;
+    document.getElementById('roleModalName').value = name;
+    document.getElementById('roleModalDesc').value = description;
+    showModal('roleModal');
+}
+
+function deleteRole(id, name) {
+    if (!confirm('确定删除角色「' + name + '」吗？')) return;
+    var params = 'role_id=' + encodeURIComponent(id);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/project_role/delete', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            saveCurrentTab();
+            location.reload();
+        } else {
+            alert('删除失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
 }
 
 function submitDiscussion() {
@@ -961,6 +1020,9 @@ function submitProcessNodeForm(e, modalId) {
     btn.disabled = true;
     btn.textContent = '提交中...';
 
+    var nodeId = document.getElementById('nodeModalId').value;
+    var url = nodeId ? '/api/process_node/update' : '/api/process_node/create';
+
     var params = [];
     var inputs = form.querySelectorAll('input, select, textarea');
     inputs.forEach(function(input) {
@@ -970,26 +1032,268 @@ function submitProcessNodeForm(e, modalId) {
     });
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/process_node/create', true);
+    xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.onload = function() {
         btn.disabled = false;
-        btn.textContent = '添加节点';
+        btn.textContent = '提交中...';
         if (xhr.status === 200) {
             hideModal(modalId);
             saveCurrentTab();
             location.reload();
         } else {
-            showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
+            showError(form, '操作失败：' + (xhr.responseText || '未知错误'));
         }
     };
     xhr.onerror = function() {
         btn.disabled = false;
-        btn.textContent = '添加节点';
+        btn.textContent = '提交中...';
         showError(form, '网络错误，请重试');
     };
     xhr.send(params.join('&'));
+}
+
+function editProcessNode(id, name, description, sortOrder, projectRoleId) {
+    document.getElementById('processNodeModalTitle').textContent = '编辑流程节点';
+    document.getElementById('processNodeModalSubmit').textContent = '保存';
+    document.getElementById('nodeModalId').value = id;
+    var form = document.querySelector('#processNodeModal form');
+    form.querySelector('input[name="name"]').value = name;
+    form.querySelector('textarea[name="description"]').value = description;
+    form.querySelector('input[name="sort_order"]').value = sortOrder;
+    form.querySelector('select[name="project_role_id"]').value = projectRoleId;
+    showModal('processNodeModal');
+}
+
+function deleteProcessNode(id, name) {
+    if (!confirm('确定删除流程节点「' + name + '」吗？')) return;
+    var params = 'node_id=' + encodeURIComponent(id);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/process_node/delete', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            saveCurrentTab();
+            location.reload();
+        } else {
+            alert('删除失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
+}
+
+function submitProcessForm(e, modalId) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    var bpId = document.getElementById('processModalId').value;
+    var url = bpId ? '/api/business_process/update' : '/api/business_process/create';
+
+    var params = [];
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        if (input.name && input.type !== 'submit') {
+            params.push(encodeURIComponent(input.name) + '=' + encodeURIComponent(input.value));
+        }
+    });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        if (xhr.status === 200) {
+            hideModal(modalId);
+            saveCurrentTab();
+            location.reload();
+        } else {
+            showError(form, '操作失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        showError(form, '网络错误，请重试');
+    };
+    xhr.send(params.join('&'));
+}
+
+function editProcess(id, name, description, initiatorRoleId) {
+    document.getElementById('processModalTitle').textContent = '编辑业务流程';
+    document.getElementById('processModalSubmit').textContent = '保存';
+    document.getElementById('processModalId').value = id;
+    document.getElementById('processModalName').value = name;
+    document.getElementById('processModalDesc').value = description;
+    document.getElementById('processModalRole').value = initiatorRoleId;
+    showModal('processModal');
+}
+
+function deleteProcess(id, name) {
+    if (!confirm('确定删除业务流程「' + name + '」吗？该流程下的节点也将被删除。')) return;
+    var params = 'bp_id=' + encodeURIComponent(id);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/business_process/delete', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            saveCurrentTab();
+            location.reload();
+        } else {
+            alert('删除失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
+}
+
+function submitRequirementForm(e, modalId) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    var requirementId = document.getElementById('requirementModalId').value;
+    var url = requirementId ? '/api/requirement/update' : '/api/requirement/create';
+
+    var params = [];
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        if (input.name && input.type !== 'submit') {
+            params.push(encodeURIComponent(input.name) + '=' + encodeURIComponent(input.value));
+        }
+    });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        if (xhr.status === 200) {
+            hideModal(modalId);
+            saveCurrentTab();
+            location.reload();
+        } else {
+            showError(form, '操作失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        showError(form, '网络错误，请重试');
+    };
+    xhr.send(params.join('&'));
+}
+
+function editRequirement(id, projectId, systemId, moduleId, roleId, name, description) {
+    document.getElementById('requirementModalTitle').textContent = '编辑需求';
+    document.getElementById('requirementModalSubmit').textContent = '保存';
+    document.getElementById('requirementModalId').value = id;
+    var form = document.querySelector('#requirementModal form');
+    form.querySelector('input[name="name"]').value = name;
+    form.querySelector('textarea[name="description"]').value = description;
+    form.querySelector('select[name="system_id"]').value = systemId;
+    form.querySelector('select[name="module_id"]').value = moduleId;
+    form.querySelector('select[name="role_id"]').value = roleId;
+    showModal('requirementModal');
+}
+
+function deleteRequirement(id, name) {
+    if (!confirm('确定删除需求「' + name + '」吗？')) return;
+    var params = 'requirement_id=' + encodeURIComponent(id);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/requirement/delete', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            saveCurrentTab();
+            location.reload();
+        } else {
+            alert('删除失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
+}
+
+function submitBugForm(e, modalId) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    var bugId = document.getElementById('bugModalId').value;
+    var url = bugId ? '/api/bug/update' : '/api/bug/create';
+
+    var params = [];
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        if (input.name && input.type !== 'submit') {
+            params.push(encodeURIComponent(input.name) + '=' + encodeURIComponent(input.value));
+        }
+    });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        if (xhr.status === 200) {
+            hideModal(modalId);
+            saveCurrentTab();
+            location.reload();
+        } else {
+            showError(form, '操作失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = '提交中...';
+        showError(form, '网络错误，请重试');
+    };
+    xhr.send(params.join('&'));
+}
+
+function editBug(id, projectId, requirementId, roleId, name, description) {
+    document.getElementById('bugModalTitle').textContent = '编辑 BUG';
+    document.getElementById('bugModalSubmit').textContent = '保存';
+    document.getElementById('bugModalId').value = id;
+    var form = document.querySelector('#bugModal form');
+    form.querySelector('input[name="name"]').value = name;
+    form.querySelector('textarea[name="description"]').value = description;
+    form.querySelector('select[name="requirement_id"]').value = requirementId;
+    form.querySelector('select[name="role_id"]').value = roleId;
+    showModal('bugModal');
+}
+
+function deleteBug(id, name) {
+    if (!confirm('确定删除 BUG「' + name + '」吗？')) return;
+    var params = 'bug_id=' + encodeURIComponent(id);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/bug/delete', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            saveCurrentTab();
+            location.reload();
+        } else {
+            alert('删除失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.send(params);
 }
 
 document.querySelectorAll('.modal-overlay').forEach(function(modal) {

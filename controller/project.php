@@ -591,3 +591,273 @@ if_post('/api/project_role/unlink_module', function () {
     return ['success' => true];
 });
 
+// API: Update project role
+if_post('/api/project_role/update', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $role_id = (int)input('role_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$role_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'role_id and name']);
+    }
+
+    $role = dao('project_role')->find_by_id($role_id);
+    if ($role->is_null()) {
+        otherwise_error_code('ROLE_NOT_FOUND', false);
+    }
+
+    $role->name = $name;
+    $role->description = $description;
+
+    return [
+        'id' => $role->id,
+        'name' => $role->name,
+        'description' => $role->description,
+    ];
+});
+
+// API: Delete project role
+if_post('/api/project_role/delete', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $role_id = (int)input('role_id', 0);
+    if (!$role_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'role_id']);
+    }
+
+    $role = dao('project_role')->find_by_id($role_id);
+    if ($role->is_null()) {
+        otherwise_error_code('ROLE_NOT_FOUND', false);
+    }
+
+    $role->delete();
+
+    return ['id' => $role->id];
+});
+
+// API: Update business process
+if_post('/api/business_process/update', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $bp_id = (int)input('bp_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+    $initiator_role_id = (int)input('initiator_role_id', 0);
+
+    if (!$bp_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'bp_id and name']);
+    }
+
+    $bp = dao('business_process')->find_by_id($bp_id);
+    if ($bp->is_null()) {
+        otherwise_error_code('BUSINESS_PROCESS_NOT_FOUND', false);
+    }
+
+    $bp->name = $name;
+    $bp->description = $description;
+    $bp->initiator_role_id = $initiator_role_id;
+
+    return [
+        'id' => $bp->id,
+        'name' => $bp->name,
+        'description' => $bp->description,
+        'initiator_role_id' => $bp->initiator_role_id,
+    ];
+});
+
+// API: Delete business process
+if_post('/api/business_process/delete', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $bp_id = (int)input('bp_id', 0);
+    if (!$bp_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'bp_id']);
+    }
+
+    $bp = dao('business_process')->find_by_id($bp_id);
+    if ($bp->is_null()) {
+        otherwise_error_code('BUSINESS_PROCESS_NOT_FOUND', false);
+    }
+
+    $bp->delete();
+
+    return ['id' => $bp->id];
+});
+
+// API: Update process node
+if_post('/api/process_node/update', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $node_id = (int)input('node_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+    $sort_order = (int)input('sort_order', 0);
+    $project_role_id = (int)input('project_role_id', 0);
+
+    if (!$node_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'node_id and name']);
+    }
+
+    $node = dao('process_node')->find_by_id($node_id);
+    if ($node->is_null()) {
+        otherwise_error_code('PROCESS_NODE_NOT_FOUND', false);
+    }
+
+    $node->name = $name;
+    $node->description = $description;
+    $node->sort_order = $sort_order;
+    $node->project_role_id = $project_role_id;
+
+    return [
+        'id' => $node->id,
+        'name' => $node->name,
+        'description' => $node->description,
+        'sort_order' => $node->sort_order,
+        'project_role_id' => $node->project_role_id,
+    ];
+});
+
+// API: Delete process node
+if_post('/api/process_node/delete', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $node_id = (int)input('node_id', 0);
+    if (!$node_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'node_id']);
+    }
+
+    $node = dao('process_node')->find_by_id($node_id);
+    if ($node->is_null()) {
+        otherwise_error_code('PROCESS_NODE_NOT_FOUND', false);
+    }
+
+    $node->delete();
+
+    return ['id' => $node->id];
+});
+
+// API: Update requirement
+if_post('/api/requirement/update', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $requirement_id = (int)input('requirement_id', 0);
+    $project_id = (int)input('project_id', 0);
+    $system_id = (int)input('system_id', 0);
+    $module_id = (int)input('module_id', 0);
+    $role_id = (int)input('role_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$requirement_id || !$project_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'requirement_id, project_id and name']);
+    }
+
+    $requirement = dao('requirement')->find_by_id($requirement_id);
+    if ($requirement->is_null()) {
+        otherwise_error_code('REQUIREMENT_NOT_FOUND', false);
+    }
+
+    $requirement->project_id = $project_id;
+    $requirement->system_id = $system_id;
+    $requirement->module_id = $module_id;
+    $requirement->role_id = $role_id;
+    $requirement->name = $name;
+    $requirement->description = $description;
+
+    return [
+        'id' => $requirement->id,
+        'project_id' => $requirement->project_id,
+        'system_id' => $requirement->system_id,
+        'module_id' => $requirement->module_id,
+        'role_id' => $requirement->role_id,
+        'name' => $requirement->name,
+        'description' => $requirement->description,
+    ];
+});
+
+// API: Delete requirement
+if_post('/api/requirement/delete', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $requirement_id = (int)input('requirement_id', 0);
+    if (!$requirement_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'requirement_id']);
+    }
+
+    $requirement = dao('requirement')->find_by_id($requirement_id);
+    if ($requirement->is_null()) {
+        otherwise_error_code('REQUIREMENT_NOT_FOUND', false);
+    }
+
+    $requirement->delete();
+
+    return ['id' => $requirement->id];
+});
+
+// API: Update bug
+if_post('/api/bug/update', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $bug_id = (int)input('bug_id', 0);
+    $project_id = (int)input('project_id', 0);
+    $requirement_id = (int)input('requirement_id', 0);
+    $role_id = (int)input('role_id', 0);
+    $name = trim(input('name', ''));
+    $description = trim(input('description', ''));
+
+    if (!$bug_id || !$project_id || !$name) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'bug_id, project_id and name']);
+    }
+
+    $bug = dao('bug')->find_by_id($bug_id);
+    if ($bug->is_null()) {
+        otherwise_error_code('BUG_NOT_FOUND', false);
+    }
+
+    $bug->project_id = $project_id;
+    $bug->requirement_id = $requirement_id;
+    $bug->role_id = $role_id;
+    $bug->name = $name;
+    $bug->description = $description;
+
+    return [
+        'id' => $bug->id,
+        'project_id' => $bug->project_id,
+        'requirement_id' => $bug->requirement_id,
+        'role_id' => $bug->role_id,
+        'name' => $bug->name,
+        'description' => $bug->description,
+    ];
+});
+
+// API: Delete bug
+if_post('/api/bug/delete', function () {
+    $redirect = require_user_name();
+    if ($redirect) return $redirect;
+
+    $bug_id = (int)input('bug_id', 0);
+    if (!$bug_id) {
+        otherwise_error_code('INVALID_PARAM', false, [], ['param' => 'bug_id']);
+    }
+
+    $bug = dao('bug')->find_by_id($bug_id);
+    if ($bug->is_null()) {
+        otherwise_error_code('BUG_NOT_FOUND', false);
+    }
+
+    $bug->delete();
+
+    return ['id' => $bug->id];
+});
+

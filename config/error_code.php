@@ -27,4 +27,8 @@ return [
     'INVALID_REQUEST' => '无效的请求',
     'SYSTEM_NOT_FOUND' => '系统不存在',
     'MODULE_NOT_FOUND' => '模块不存在',
+    'BUSINESS_PROCESS_NOT_FOUND' => '业务流程不存在',
+    'PROCESS_NODE_NOT_FOUND' => '流程节点不存在',
+    'REQUIREMENT_NOT_FOUND' => '需求不存在',
+    'BUG_NOT_FOUND' => 'BUG不存在',
 ];
