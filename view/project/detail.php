@@ -1,5 +1,6 @@
 @php
 $secondary_items = [];
+$hide_sidebar = true;
 $systems = $systems ?? [];
 $business_processes = $business_processes ?? [];
 $process_nodes = $process_nodes ?? [];
@@ -13,7 +14,6 @@ $role_modules = $role_modules ?? [];
 
 <div class="page-top-bar">
     <h2>{{ $project->name or '项目' }}</h2>
-    <a href="/team/{{ $team->id }}/project" class="btn btn-default btn-sm">&larr; 返回项目列表</a>
 </div>
 
 <!-- Overview Section (always visible) -->

@@ -156,7 +156,7 @@
                 <a href="/team/{{ $current_team->id }}/project/{{ $p->id }}">{{ $p->name }}</a>
                 @endforeach
                 <div class="team-dropdown-divider"></div>
-                <a href="/team/{{ $current_team->id }}/project">新建项目</a>
+                <a href="/team/{{ $current_team->id }}/project/create">新建项目</a>
             </div>
         </div>
         @else
@@ -171,6 +171,7 @@
 </nav>
 
 <div class="app-layout">
+    @if (!isset($hide_sidebar) || !$hide_sidebar)
     <aside class="sidebar">
         @if ($secondary_items or false)
             @foreach ($secondary_items as $item)
@@ -187,13 +188,14 @@
                 @endforeach
             @endif
             <div class="sidebar-new-project">
-                <a href="#" onclick="showCreateModal(); return false;">+ 新建项目</a>
+                <a href="/team/{{ $team->id }}/project/create">新建项目</a>
             </div>
             @else
             <div class="sidebar-item" style="color:#999;cursor:default">暂无菜单</div>
             @endif
         @endif
     </aside>
+    @endif
 
     <main class="main-content">
 @endif

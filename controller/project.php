@@ -1,7 +1,7 @@
 <?php
 
-// Project list page
-if_get('/team/*/project', function ($team_id) {
+// Project create page
+if_get('/team/*/project/create', function ($team_id) {
     $redirect = require_user_name();
     if ($redirect) return $redirect;
 
@@ -10,27 +10,19 @@ if_get('/team/*/project', function ($team_id) {
         return redirect('/account/team');
     }
 
-    set_current_team_id($team_id);
-
     $user_id = get_current_user_id();
     $role = get_user_team_role($team_id, $user_id);
     if ($role === null) {
         return redirect('/account/team');
     }
 
-    $projects = dao('project')->find_all_by_column(['team_id' => $team_id]);
-    $user = dao('team_account')->find_by_id($user_id);
     $user_teams = get_user_teams($user_id);
 
-    return render('project/list', [
-        'title' => $team->name . ' - 项目',
+    return render('project/create', [
+        'title' => '新建项目',
         'team' => $team,
-        'projects' => $projects,
         'current_team' => $team,
         'user_teams' => $user_teams,
-        'user' => $user,
-        'current_user_role' => $role,
-        'current_project_id' => 0,
     ]);
 });
 
@@ -54,7 +46,7 @@ if_get('/team/*/project/*', function ($team_id, $project_id) {
 
     $project = dao('project')->find_by_id($project_id);
     if ($project->is_null() || $project->team_id != $team_id) {
-        return redirect('/team/' . $team_id . '/project');
+        return redirect('/team/' . $team_id . '/dashboard');
     }
 
     $systems = dao('system')->find_all_by_column(['project_id' => (int)$project_id]);
