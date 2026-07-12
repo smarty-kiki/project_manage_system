@@ -18,6 +18,7 @@ if_get('/team/*/project/create', function ($team_id) {
 
     $user_teams = get_user_teams($user_id);
     $projects = dao('project')->find_all_by_column(['team_id' => $team_id]);
+    $user = dao('team_account')->find_by_id($user_id);
 
     return render('project/create', [
         'title' => '新建项目',
@@ -25,6 +26,7 @@ if_get('/team/*/project/create', function ($team_id) {
         'current_team' => $team,
         'user_teams' => $user_teams,
         'projects' => $projects,
+        'user' => $user,
     ]);
 });
 
