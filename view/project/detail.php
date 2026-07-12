@@ -18,21 +18,12 @@ $role_modules = $role_modules ?? [];
 
 <!-- Overview Section (always visible) -->
 <div style="margin-bottom: 16px;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
-        <div class="card" style="padding: 16px 20px;">
-            <div style="color: #999; font-size: 13px; margin-bottom: 8px;">创建时间</div>
-            <div style="font-size: 16px; font-weight: 600; color: #333;">{{ $project->create_time }}</div>
-        </div>
-        <div class="card" style="padding: 16px 20px;">
-            <div style="color: #999; font-size: 13px; margin-bottom: 8px;">最近更新</div>
-            <div style="font-size: 16px; font-weight: 600; color: #333;">{{ $project->update_time }}</div>
-        </div>
+    <div style="display: flex; gap: 24px; margin-bottom: 12px; color: #666; font-size: 14px;">
+        <span>创建时间：{{ $project->create_time }}</span>
+        <span>最近更新：{{ $project->update_time }}</span>
     </div>
-    <div class="card">
-        <div class="card-header">项目描述</div>
-        <div class="card-body">
-            <p style="color: #666; line-height: 1.8;">{{ $project->description or '暂无描述' }}</p>
-        </div>
+    <div style="color: #666; line-height: 1.8; font-size: 14px;">
+        {{ $project->description or '暂无描述' }}
     </div>
 </div>
 
