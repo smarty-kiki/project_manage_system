@@ -22,6 +22,7 @@
         .form-group label { display: block; margin-bottom: 6px; color: #666; }
         .form-control { width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; outline: none; }
         .form-control:focus { border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,.2); }
+        select.form-control { padding-right: 32px; }
         textarea.form-control { min-height: 80px; resize: vertical; }
         .alert { padding: 10px 16px; border-radius: 4px; margin-bottom: 16px; }
         .alert-error { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
