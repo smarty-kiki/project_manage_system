@@ -91,7 +91,7 @@
 
         /* Team switcher */
         .navbar-team-switcher { position: relative; margin-right: 8px; }
-        .current-team-name { color: #fff; cursor: pointer; padding: 6px 10px; border-radius: 4px; font-size: 13px; background: rgba(255,255,255,.1); display: inline-block; user-select: none; }
+        .current-team-name { color: #fff; cursor: pointer; padding: 6px 10px; border-radius: 4px; font-size: 13px; background: rgba(255,255,255,.1); display: inline-block; user-select: none; height: 32px; line-height: 20px; }
         .current-team-name:hover { background: rgba(255,255,255,.2); }
         .team-dropdown { position: absolute; top: 34px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.15); min-width: 160px; z-index: 200; padding: 4px 0; }
         .team-dropdown a { display: block; padding: 8px 16px; color: #333; font-size: 13px; white-space: nowrap; }
