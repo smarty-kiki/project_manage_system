@@ -16,22 +16,9 @@ $role_modules = $role_modules ?? [];
     <a href="/team/{{ $team->id }}/project" class="btn btn-default btn-sm">&larr; 返回项目列表</a>
 </div>
 
-<!-- Tab Navigation -->
-<div style="background: #fff; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1);">
-    <div style="display: flex; border-bottom: 1px solid #f0f0f0; padding: 0 8px;">
-        <a href="javascript:void(0)" onclick="switchTab('overview')" id="tab-overview" class="tab-link active">概览</a>
-        <a href="javascript:void(0)" onclick="switchTab('role')" id="tab-role" class="tab-link">角色</a>
-        <a href="javascript:void(0)" onclick="switchTab('process')" id="tab-process" class="tab-link">业务流程</a>
-        <a href="javascript:void(0)" onclick="switchTab('system')" id="tab-system" class="tab-link">系统</a>
-        <a href="javascript:void(0)" onclick="switchTab('requirement')" id="tab-requirement" class="tab-link">需求</a>
-        <a href="javascript:void(0)" onclick="switchTab('bug')" id="tab-bug" class="tab-link">BUG</a>
-    </div>
-</div>
-
-<!-- Tab Contents -->
-<div id="tab-content-overview" class="tab-content">
-    <!-- Project Overview Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+<!-- Overview Section (always visible) -->
+<div style="margin-bottom: 16px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 16px;">
         <div class="card" style="padding: 16px 20px;">
             <div style="color: #999; font-size: 13px; margin-bottom: 8px;">项目名称</div>
             <div style="font-size: 18px; font-weight: 600; color: #333;">{{ $project->name }}</div>
@@ -53,8 +40,6 @@ $role_modules = $role_modules ?? [];
             <div style="font-size: 18px; font-weight: 600; color: #52c41a;">{{ count($project_roles) }}</div>
         </div>
     </div>
-
-    <!-- Project Description -->
     <div class="card">
         <div class="card-header">项目描述</div>
         <div class="card-body">
@@ -63,7 +48,19 @@ $role_modules = $role_modules ?? [];
     </div>
 </div>
 
-<div id="tab-content-role" class="tab-content" style="display: none;">
+<!-- Tab Navigation -->
+<div style="background: #fff; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1);">
+    <div style="display: flex; border-bottom: 1px solid #f0f0f0; padding: 0 8px;">
+        <a href="javascript:void(0)" onclick="switchTab('role')" id="tab-role" class="tab-link active">角色</a>
+        <a href="javascript:void(0)" onclick="switchTab('process')" id="tab-process" class="tab-link">业务流程</a>
+        <a href="javascript:void(0)" onclick="switchTab('system')" id="tab-system" class="tab-link">系统</a>
+        <a href="javascript:void(0)" onclick="switchTab('requirement')" id="tab-requirement" class="tab-link">需求</a>
+        <a href="javascript:void(0)" onclick="switchTab('bug')" id="tab-bug" class="tab-link">BUG</a>
+    </div>
+</div>
+
+<!-- Tab Contents -->
+<div id="tab-content-role" class="tab-content">
     <div class="card">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>角色列表</span>
