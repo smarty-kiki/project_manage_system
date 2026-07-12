@@ -38,12 +38,7 @@ $secondary_items = [
 </div>
 
 <div class="card mt-16">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <span>项目</span>
-        @if ($current_user_role === 'admin')
-        <a href="/team/{{ $team->id }}/project" class="btn btn-primary btn-sm">+ 新建项目</a>
-        @endif
-    </div>
+    <div class="card-header">项目</div>
     <div class="card-body">
         @if (empty($projects))
         <div class="empty-state">
