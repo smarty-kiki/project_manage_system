@@ -466,15 +466,28 @@ $role_modules = $role_modules ?? [];
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description" id="roleModalDesc" placeholder="角色职责说明"></textarea></div>
                 <div class="form-group" id="roleModalModuleSection" style="display: none;">
                     <label>关联模块</label>
-                    <div id="roleModalLinkedModules"></div>
-                    <div style="display: flex; gap: 8px; margin-top: 6px;">
-                        <select class="form-control" id="roleModalModuleSelect" style="flex: 1;">
-                            <option value="">选择模块添加</option>
-                            @foreach ($modules as $m)
-                            <option value="{{ $m->id }}">{{ $m->name }}</option>
-                            @endforeach
-                        </select>
-                        <button type="button" class="btn btn-primary btn-sm" onclick="linkModuleToRole()">添加</button>
+                    <div id="roleModalModuleCheckboxes" style="max-height: 240px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 6px; padding: 8px 12px;">
+                        @php
+                            $modules_by_system = [];
+                            foreach ($modules as $m) {
+                                $modules_by_system[$m->system_id][] = $m;
+                            }
+                            $system_names = [];
+                            foreach ($systems as $s) { $system_names[$s->id] = $s->name; }
+                        @endphp
+                        @foreach ($systems as $s)
+                            @if (!empty($modules_by_system[$s->id]))
+                            <div style="margin-bottom: 8px;">
+                                <div style="font-size: 12px; color: #999; margin-bottom: 4px;">{{ $s->name }}</div>
+                                @foreach ($modules_by_system[$s->id] as $m)
+                                <label style="display: inline-flex; align-items: center; margin-right: 12px; margin-bottom: 4px; font-size: 13px; cursor: pointer;">
+                                    <input type="checkbox" class="role-module-check" data-role-id="" data-module-id="{{ $m->id }}" value="{{ $m->id }}" style="margin-right: 4px;">
+                                    {{ $m->name }}
+                                </label>
+                                @endforeach
+                            </div>
+                            @endif
+                        @endforeach
                     </div>
                 </div>
                 <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')">取消</button><button type="submit" class="btn btn-primary" id="roleModalSubmit">创建</button></div>
@@ -702,82 +715,43 @@ function editRole(id, name, description) {
     document.getElementById('roleModalName').value = name;
     document.getElementById('roleModalDesc').value = description;
     document.getElementById('roleModalModuleSection').style.display = 'block';
-    renderRoleModules(id);
-    showModal('roleModal');
-}
 
-function renderRoleModules(roleId) {
-    var container = document.getElementById('roleModalLinkedModules');
     var linked = {};
     @foreach ($role_modules as $rid => $mids)
     linked[{{ $rid }}] = {{ json_encode($mids) }};
     @endforeach
-    var moduleNames = {};
-    @foreach ($modules as $m)
-    moduleNames[{{ $m->id }}] = '{{ addslashes($m->name) }}';
-    @endforeach
+    var ids = linked[id] || [];
 
-    var ids = linked[roleId] || [];
-    var select = document.getElementById('roleModalModuleSelect');
-    select.innerHTML = '<option value="">选择模块添加</option>';
-    var availableNames = {};
-    Object.keys(moduleNames).forEach(function(mid) {
-        if (ids.indexOf(parseInt(mid)) === -1) {
-            availableNames[mid] = moduleNames[mid];
-            var opt = document.createElement('option');
-            opt.value = mid;
-            opt.textContent = moduleNames[mid];
-            select.appendChild(opt);
-        }
+    var checkboxes = document.querySelectorAll('.role-module-check');
+    checkboxes.forEach(function(cb) {
+        cb.dataset.roleId = id;
+        cb.checked = ids.indexOf(parseInt(cb.value)) !== -1;
+        cb.onchange = function() {
+            toggleRoleModule(parseInt(cb.dataset.roleId), parseInt(cb.value), cb.checked);
+        };
     });
 
-    if (ids.length === 0) {
-        container.innerHTML = '<span style="font-size: 13px; color: #999;">暂无关联模块</span>';
-        return;
-    }
-    var html = '';
-    ids.forEach(function(mid) {
-        html += '<span style="display: inline-flex; align-items: center; background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; border-radius: 4px; padding: 2px 8px; font-size: 13px; margin: 2px 4px 2px 0;">' +
-            escapeHtml(moduleNames[mid] || mid) +
-            ' <a href="javascript:void(0)" onclick="unlinkModuleFromRole(' + roleId + ',' + mid + ')" style="margin-left: 4px; color: #ff4d4f; text-decoration: none; font-weight: bold;">&times;</a>' +
-        '</span>';
-    });
-    container.innerHTML = html;
+    showModal('roleModal');
 }
 
-function linkModuleToRole() {
-    var select = document.getElementById('roleModalModuleSelect');
-    var moduleId = parseInt(select.value);
-    if (!moduleId) return;
-    var roleId = parseInt(document.getElementById('roleModalId').value);
+function toggleRoleModule(roleId, moduleId, checked) {
+    var url = checked ? '/api/project_role/link_module' : '/api/project_role/unlink_module';
     var params = 'role_id=' + roleId + '&module_id=' + moduleId;
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/project_role/link_module', true);
+    xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.onload = function() {
-        if (xhr.status === 200) {
-            renderRoleModules(roleId);
-        } else {
-            alert('关联失败：' + (xhr.responseText || '未知错误'));
+        if (xhr.status !== 200) {
+            cb.checked = !checked;
+            alert((checked ? '关联' : '取消关联') + '失败：' + (xhr.responseText || '未知错误'));
         }
     };
-    xhr.send(params);
-}
-
-function unlinkModuleFromRole(roleId, moduleId) {
-    var params = 'role_id=' + roleId + '&module_id=' + moduleId;
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/project_role/unlink_module', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            renderRoleModules(roleId);
-        } else {
-            alert('取消关联失败：' + (xhr.responseText || '未知错误'));
-        }
+    xhr.onerror = function() {
+        cb.checked = !checked;
+        alert('网络错误，请重试');
     };
+    var cb = document.querySelector('.role-module-check[data-module-id="' + moduleId + '"]');
     xhr.send(params);
 }
 
