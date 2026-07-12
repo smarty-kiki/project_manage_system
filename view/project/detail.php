@@ -106,6 +106,14 @@ $role_modules = $role_modules ?? [];
 </div>
 
 <div id="tab-content-process" class="tab-content" style="display: none;">
+    @php
+        $nodes_by_process = [];
+        foreach ($process_nodes as $pn) {
+            $nodes_by_process[$pn->business_process_id][] = $pn;
+        }
+        $role_map = [];
+        foreach ($project_roles as $r) { $role_map[$r->id] = $r; }
+    @endphp
     <div class="card">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>业务流程列表</span>
@@ -115,26 +123,51 @@ $role_modules = $role_modules ?? [];
             @if (empty($business_processes))
             <div class="empty-state"><p>暂无业务流程</p></div>
             @else
-            <table class="member-table">
-                <tr>
-                    <th>名称</th>
-                    <th>描述</th>
-                    <th>发起角色</th>
-                </tr>
-                @foreach ($business_processes as $bp)
-                @php
-                    $initiator = null;
-                    if ($bp->initiator_role_id) {
-                        foreach ($project_roles as $r) { if ($r->id == $bp->initiator_role_id) { $initiator = $r; break; } }
-                    }
-                @endphp
-                <tr>
-                    <td><strong>{{ $bp->name }}</strong></td>
-                    <td style="color: #666;">{{ $bp->description or '-' }}</td>
-                    <td>{{ $initiator ? $initiator->name : '-' }}</td>
-                </tr>
-                @endforeach
-            </table>
+            @foreach ($business_processes as $bp)
+            @php
+                $initiator = null;
+                if ($bp->initiator_role_id) {
+                    foreach ($project_roles as $r) { if ($r->id == $bp->initiator_role_id) { $initiator = $r; break; } }
+                }
+                $bp_nodes = $nodes_by_process[$bp->id] ?? [];
+            @endphp
+            <div style="margin-bottom: 16px; padding: 12px; background: #fafafa; border-radius: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: {{ !empty($bp_nodes) ? '8px' : '0' }};">
+                    <div>
+                        <strong style="font-size: 14px;">{{ $bp->name }}</strong>
+                        <span style="color: #999; font-size: 13px; margin-left: 8px;">{{ $bp->description or '' }}</span>
+                        @if ($initiator)
+                        <span style="color: #1890ff; font-size: 12px; margin-left: 8px;">发起：{{ $initiator->name }}</span>
+                        @endif
+                    </div>
+                    <button class="btn btn-default btn-xs" onclick="showProcessNodeModal({{ $bp->id }})">+ 添加节点</button>
+                </div>
+                @if (!empty($bp_nodes))
+                <table class="member-table" style="font-size: 13px;">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>节点名称</th>
+                        <th>描述</th>
+                        <th>绑定角色</th>
+                    </tr>
+                    @foreach ($bp_nodes as $node)
+                    @php
+                        $node_role = null;
+                        if ($node->project_role_id) {
+                            foreach ($project_roles as $r) { if ($r->id == $node->project_role_id) { $node_role = $r; break; } }
+                        }
+                    @endphp
+                    <tr>
+                        <td>{{ $node->sort_order }}</td>
+                        <td>{{ $node->name }}</td>
+                        <td style="color: #999;">{{ $node->description or '-' }}</td>
+                        <td>{{ $node_role ? $node_role->name : '-' }}</td>
+                    </tr>
+                    @endforeach
+                </table>
+                @endif
+            </div>
+            @endforeach
             @endif
         </div>
     </div>
@@ -316,6 +349,32 @@ $role_modules = $role_modules ?? [];
                     </select>
                 </div>
                 <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('processModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Process Node Modal -->
+<div id="processNodeModal" class="modal-overlay" style="display:none;">
+    <div class="modal-dialog">
+        <div class="modal-header"><span>新建流程节点</span><a href="javascript:void(0)" onclick="hideModal('processNodeModal')">&times;</a></div>
+        <div class="modal-body">
+            <form onsubmit="submitProcessNodeForm(event, 'processNodeModal')">
+                <input type="hidden" name="business_process_id" id="node_bp_id" value="">
+                <input type="hidden" name="project_id" value="{{ $project->id }}">
+                <div class="form-group"><label>节点名称 *</label><input type="text" class="form-control" name="name" required></div>
+                <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
+                <div class="form-group">
+                    <label>绑定角色 *</label>
+                    <select class="form-control" name="project_role_id" required>
+                        <option value="0">请选择角色</option>
+                        @foreach ($project_roles as $r)
+                        <option value="{{ $r->id }}">{{ $r->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group"><label>排序</label><input type="number" class="form-control" name="sort_order" value="0"></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('processNodeModal')">取消</button><button type="submit" class="btn btn-primary">添加节点</button></div>
             </form>
         </div>
     </div>
@@ -507,6 +566,48 @@ function submitRoleForm(e, modalId) {
     xhr.onerror = function() {
         btn.disabled = false;
         btn.textContent = '创建';
+        alert('网络错误，请重试');
+    };
+    xhr.send(params.join('&'));
+}
+
+function showProcessNodeModal(business_process_id) {
+    document.getElementById('node_bp_id').value = business_process_id;
+    showModal('processNodeModal');
+}
+
+function submitProcessNodeForm(e, modalId) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    var params = [];
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        if (input.name && input.type !== 'submit') {
+            params.push(encodeURIComponent(input.name) + '=' + encodeURIComponent(input.value));
+        }
+    });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/process_node/create', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        btn.disabled = false;
+        btn.textContent = '添加节点';
+        if (xhr.status === 200) {
+            hideModal(modalId);
+            location.reload();
+        } else {
+            alert('创建失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = '添加节点';
         alert('网络错误，请重试');
     };
     xhr.send(params.join('&'));

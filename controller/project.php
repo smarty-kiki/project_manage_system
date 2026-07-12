@@ -274,6 +274,7 @@ if_post('/api/process_node/create', function () {
     $user_id = get_current_user_id();
     $business_process_id = (int)input('business_process_id', 0);
     $project_id = (int)input('project_id', 0);
+    $project_role_id = (int)input('project_role_id', 0);
     $name = trim(input('name', ''));
     $description = trim(input('description', ''));
     $sort_order = (int)input('sort_order', 0);
@@ -287,13 +288,14 @@ if_post('/api/process_node/create', function () {
         otherwise_error_code('BUSINESS_PROCESS_NOT_FOUND', false);
     }
 
-    $node = process_node::create($business_process_id, $name, $description, $sort_order, $project_id);
+    $node = process_node::create($business_process_id, $name, $description, $sort_order, $project_id, $project_role_id);
 
     return [
         'id' => $node->id,
         'name' => $node->name,
         'description' => $node->description,
         'sort_order' => $node->sort_order,
+        'project_role_id' => $node->project_role_id,
     ];
 });
 
