@@ -411,7 +411,7 @@ $role_modules = $role_modules ?? [];
                 <input type="hidden" name="project_id" value="{{ $project->id }}">
                 <div class="form-group"><label>角色名称 *</label><input type="text" class="form-control" name="name" required placeholder="如：顾客、商品运营"></div>
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description" placeholder="角色职责说明"></textarea></div>
-                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')" style="margin-right: 8px;">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('roleModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
             </form>
         </div>
     </div>
@@ -667,6 +667,7 @@ document.querySelectorAll('.modal-overlay').forEach(function(modal) {
 .modal-header { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
 .modal-header a { color: #999; font-size: 20px; text-decoration: none; }
 .modal-body { padding: 20px; }
+.modal-body .text-right .btn:not(:last-child) { margin-right: 8px; }
 </style>
 
 @include('layout/app_footer')
