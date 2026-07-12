@@ -473,6 +473,17 @@ function hideModal(id) {
     if (modal) { modal.style.display = 'none'; }
 }
 
+function showError(form, message) {
+    var existing = form.querySelector('.form-error');
+    if (existing) existing.remove();
+    var div = document.createElement('div');
+    div.className = 'form-error';
+    div.style.cssText = 'background:#fff2f0;border:1px solid #ffccc7;color:#a8071a;padding:8px 12px;border-radius:4px;margin-bottom:12px;font-size:13px;';
+    div.textContent = message;
+    form.insertBefore(div, form.firstChild);
+    setTimeout(function() { div.remove(); }, 5000);
+}
+
 function submitForm(e, url, modalId) {
     e.preventDefault();
     var form = e.target;
@@ -499,13 +510,13 @@ function submitForm(e, url, modalId) {
             hideModal(modalId);
             location.reload();
         } else {
-            alert('创建失败：' + (xhr.responseText || '未知错误'));
+            showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
         }
     };
     xhr.onerror = function() {
         btn.disabled = false;
         btn.textContent = '创建';
-        alert('网络错误，请重试');
+        showError(form, '网络错误，请重试');
     };
     xhr.send(params.join('&'));
 }
@@ -536,13 +547,13 @@ function submitRoleForm(e, modalId) {
             hideModal(modalId);
             location.reload();
         } else {
-            alert('创建失败：' + (xhr.responseText || '未知错误'));
+            showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
         }
     };
     xhr.onerror = function() {
         btn.disabled = false;
         btn.textContent = '创建';
-        alert('网络错误，请重试');
+        showError(form, '网络错误，请重试');
     };
     xhr.send(params.join('&'));
 }
@@ -578,13 +589,13 @@ function submitProcessNodeForm(e, modalId) {
             hideModal(modalId);
             location.reload();
         } else {
-            alert('创建失败：' + (xhr.responseText || '未知错误'));
+            showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
         }
     };
     xhr.onerror = function() {
         btn.disabled = false;
         btn.textContent = '添加节点';
-        alert('网络错误，请重试');
+        showError(form, '网络错误，请重试');
     };
     xhr.send(params.join('&'));
 }

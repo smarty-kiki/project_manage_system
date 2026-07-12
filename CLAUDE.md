@@ -8,7 +8,7 @@
 
 ```
 nginx → public/index.php → bootstrap.php（加载 frame/） → 注册错误处理
-  → 注册 if_verify（unit_of_work 包裹） → 加载 controller/ → 路由匹配 → 响应
+→ 注册 if_verify（unit_of_work 包裹） → 加载 controller/ → 路由匹配 → 响应
 
 cli  → public/cli.php    → bootstrap.php（加载 frame/） → 加载 command/ → 命令匹配
 ```
@@ -54,22 +54,22 @@ bootstrap.php
 
 路由函数定义在 `frame/php_fpm.php`：
 
-```php
-if_get($rule, $action)     // GET 请求
-if_post($rule, $action)    // POST 请求
-if_put($rule, $action)     // PUT 请求
-if_delete($rule, $action)  // DELETE 请求
-if_any($rule, $action)     // 任意 HTTP 方法
-```
+    ```php
+    if_get($rule, $action)     // GET 请求
+    if_post($rule, $action)    // POST 请求
+    if_put($rule, $action)     // PUT 请求
+    if_delete($rule, $action)  // DELETE 请求
+    if_any($rule, $action)     // 任意 HTTP 方法
+    ```
 
-路由规则中 `*` 作为通配符捕获路径段，按位置传递给闭包参数：
+    路由规则中 `*` 作为通配符捕获路径段，按位置传递给闭包参数：
 
-```php
-if_get('/user/*/post/*', function ($user_id, $post_id) {
-    $user = dao('user')->find_by_id($user_id);
-    return $user->to_array();
-});
-```
+    ```php
+    if_get('/user/*/post/*', function ($user_id, $post_id) {
+        $user = dao('user')->find_by_id($user_id);
+        return $user->to_array();
+    });
+    ```
 
 **返回值约定**：
 - 返回数组 → JSON 响应（自动设置 `Content-Type: application/json`）
@@ -80,6 +80,7 @@ if_get('/user/*/post/*', function ($user_id, $post_id) {
 - 不要在路由闭包中直接操作数据库，通过 DAO 和 Entity 操作
 - 路由文件中不要封装函数——所有逻辑直接写在闭包内
 - 局部拦截逻辑在路由闭包内显式调用，不隐藏在 `if_verify` 中
+- **禁止在路由闭包及其调用链中手动启动 `unit_of_work()`**——框架已自动包裹，嵌套调用会导致事务嵌套，引发数据库连接异常
 
 **新增路由文件**：按模块创建 `controller/模块名.php`，在 `public/index.php` 中追加 `include`。
 
@@ -140,6 +141,11 @@ $this->has_many('orders', 'order', 'user_id');              // 一对多
 relationship_batch_load($entities, 'relationship.chain');
 ```
 
+**关联关系的设计与使用原则**：
+- 实现 Entity 时，要主动思考实体之间的关联关系，在 Entity 中用 `has_one`、`belongs_to`、`has_many` 定义清楚
+- Controller 取数时，如果涉及关联关系，优先用 Entity 的关系查询获取关联实体，而不是用 DAO 单独查一次
+- 如果遍历一组实体并获取每个实体的关联关系，必须使用 `relationship_batch_load()` 批量加载，避免 N+1 查询问题
+
 ### DAO
 
 每个 Entity 对应一个 DAO，命名约定 `{entity_name}_dao`：
@@ -190,6 +196,8 @@ if_unit_of_work_disturbed(function (\Exception $e) { /* 异常后执行 */ });
 ### null entity 模式
 
 `dao()->find_by_id()` 查询不存在的记录时返回 `null_entity` 实例而非 null，避免空指针。访问 null_entity 的任何属性返回另一个 null_entity。
+
+**索引意识**：实现条件查询类的 DAO 方法或编写查询 SQL 时，要主动关注 WHERE 条件字段的索引状态。由于框架有软删除字段 `delete_time`，DAO 查询默认会带 `delete_time is null` 条件，因此绝大多数索引设计时要将 `delete_time` 纳入考虑（如联合索引 `idx_status_delete_time`），避免索引未命中导致全表扫描。开发完成后，通过查看环境中的慢 SQL 日志和未命中索引 SQL 日志来验证并优化查询性能。
 
 ### 新增 Entity/DAO 步骤
 
@@ -257,7 +265,7 @@ render('index/index', ['title' => 'hello world']);
 
 Blade 语法（自实现轻量引擎，仅支持以下指令）：
 
-```
+    ```
 {{ $var }}             输出变量
 {{ $var or '默认值' }}  带默认值的输出
 {{{ $var }}}           转义输出（防 XSS）
@@ -272,6 +280,11 @@ Blade 语法（自实现轻量引擎，仅支持以下指令）：
 ```
 
 不支持 `@extends`、`@section`、`@yield` 等 Laravel 特有指令。
+
+> **注意**：本项目使用的是自实现的轻量 Blade 模板引擎（`frame/blade.php`），与 Laravel Blade 是**不同的实现**，指令集和语法行为均有差异，仅支持上述列出的指令。写模板时不要套用 Laravel Blade 的经验，遇到不确定的语法先查阅引擎源码确认是否支持。
+
+**默认页面风格**：如果用户没有明确说明页面风格要求，视图必须采用简洁美观的现代风格——合理使用间距、字体层级、颜色搭配，避免过于简陋的纯文本输出。
+- 禁止在页面中使用浏览器原生的 `alert`、`confirm`、`prompt` 进行提示，应使用自定义的 UI 提示组件（如 toast、modal 等）替代
 
 **模板拆分**：如果某个页面内容过多，可以按照页面的大结构拆成几个子模板，在主模板中通过 `@include` 加载。同一页面的子模板放在同一目录下，命名清晰即可。
 
@@ -387,3 +400,4 @@ if_get('/admin/*', function ($id) {
 - 无注解、无反射、无 composer autoload——基于 class map 的类加载
 - Entity 工厂方法命名为 `create()`，必填参数前置
 - 表名使用单数名词
+- **禁止使用 PHP Session**：如需记录登录相关标记，使用 Cookie；如需记录用户临时信息，使用 Cache（Redis）

@@ -35,10 +35,22 @@ $secondary_items = [
 </div>
 
 <script>
+function showError(id, message) {
+    var existing = document.getElementById(id);
+    if (existing) existing.remove();
+    var div = document.createElement('div');
+    div.id = id;
+    div.className = 'alert alert-error';
+    div.textContent = message;
+    var container = document.querySelector('.page-top-bar').nextElementSibling;
+    container.insertBefore(div, container.firstChild);
+    setTimeout(function() { div.remove(); }, 5000);
+}
+
 function saveName() {
     var name = document.getElementById('userName').value.trim();
     if (!name) {
-        alert('请输入姓名');
+        showError('nameError', '请输入姓名');
         return;
     }
 
@@ -59,13 +71,13 @@ function saveName() {
         if (data.code === 0) {
             window.location.href = data.redirect || '/account/detail';
         } else {
-            alert(data.msg || '保存失败');
+            showError('saveError', data.msg || '保存失败');
             btn.disabled = false;
             btn.textContent = '保存';
         }
     })
     .catch(function() {
-        alert('网络错误');
+        showError('saveError', '网络错误');
         btn.disabled = false;
         btn.textContent = '保存';
     });
