@@ -201,7 +201,10 @@ $role_modules = $role_modules ?? [];
     <div class="card">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>系统列表</span>
-            <button class="btn btn-primary btn-sm" onclick="showModal('systemModal')">+ 新建系统</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary btn-sm" onclick="showModal('moduleModal')">+ 新建模块</button>
+                <button class="btn btn-primary btn-sm" onclick="showModal('systemModal')">+ 新建系统</button>
+            </div>
         </div>
         <div class="card-body">
             @if (empty($systems))
@@ -347,6 +350,29 @@ $role_modules = $role_modules ?? [];
                 <div class="form-group"><label>Git 链接</label><input type="text" class="form-control" name="git_url" placeholder="https://github.com/..."></div>
                 <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
                 <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('systemModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Module Modal -->
+<div id="moduleModal" class="modal-overlay" style="display:none;">
+    <div class="modal-dialog">
+        <div class="modal-header"><span>新建模块</span><a href="javascript:void(0)" onclick="hideModal('moduleModal')">&times;</a></div>
+        <div class="modal-body">
+            <form onsubmit="submitModuleForm(event, 'moduleModal')">
+                <input type="hidden" name="project_id" value="{{ $project->id }}">
+                <div class="form-group"><label>所属系统 *</label>
+                    <select class="form-control" name="system_id" required>
+                        <option value="0">请选择系统</option>
+                        @foreach ($systems as $s)
+                        <option value="{{ $s->id }}">{{ $s->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group"><label>模块名称 *</label><input type="text" class="form-control" name="name" required></div>
+                <div class="form-group"><label>描述</label><textarea class="form-control" name="description"></textarea></div>
+                <div class="text-right"><button type="button" class="btn btn-default" onclick="hideModal('moduleModal')">取消</button><button type="submit" class="btn btn-primary">创建</button></div>
             </form>
         </div>
     </div>
@@ -640,6 +666,44 @@ function switchPendingTab(tab) {
 function showProcessNodeModal(business_process_id) {
     document.getElementById('node_bp_id').value = business_process_id;
     showModal('processNodeModal');
+}
+
+function submitModuleForm(e, modalId) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '创建中...';
+
+    var params = [];
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function(input) {
+        if (input.name && input.type !== 'submit') {
+            params.push(encodeURIComponent(input.name) + '=' + encodeURIComponent(input.value));
+        }
+    });
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/module/create', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        btn.disabled = false;
+        btn.textContent = '创建';
+        if (xhr.status === 200) {
+            hideModal(modalId);
+            saveCurrentTab();
+            location.reload();
+        } else {
+            showError(form, '创建失败：' + (xhr.responseText || '未知错误'));
+        }
+    };
+    xhr.onerror = function() {
+        btn.disabled = false;
+        btn.textContent = '创建';
+        showError(form, '网络错误，请重试');
+    };
+    xhr.send(params.join('&'));
 }
 
 function submitProcessNodeForm(e, modalId) {
