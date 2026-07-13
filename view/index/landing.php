@@ -91,6 +91,7 @@
 <!-- Footer -->
 <footer class="footer">
     <div class="container">
+        <p>Copyright &copy; 2026 项目管理系统. All rights reserved.</p>
     </div>
 </footer>
 
