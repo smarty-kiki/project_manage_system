@@ -91,7 +91,6 @@
 <!-- Footer -->
 <footer class="footer">
     <div class="container">
-        <p>Project Management System. Built with PHP.</p>
     </div>
 </footer>
 
